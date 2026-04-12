@@ -70,25 +70,28 @@ const Navbar = () => {
     const isPendingSeller = user?.seller_status === 'PENDING';
 
     return (
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <nav className="bg-white/70 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16 items-center">
-                    <div className="flex items-center gap-6">
-                        <Link to="/" className="text-2xl font-bold text-blue-600 tracking-tight flex-shrink-0">Bidify</Link>
+                    <div className="flex items-center gap-8">
+                        <Link to="/" className="text-2xl font-black tracking-tighter text-blue-900 flex-shrink-0">
+                            Bidify<span className="text-blue-600">.</span>
+                        </Link>
                         
                         {/* Live Search */}
-                        <div ref={searchRef} className="hidden md:flex relative w-96 ml-6">
-                            <form onSubmit={handleSearch} className="w-full relative">
+                        <div ref={searchRef} className="hidden md:flex relative w-96 ml-4">
+                            <form onSubmit={handleSearch} className="w-full relative group">
+                                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-600 transition-colors" />
                                 <input 
                                     type="text" 
-                                    placeholder="Tìm kiếm sản phẩm..." 
+                                    placeholder="Tìm kiếm sản phẩm, thương hiệu..." 
                                     value={keyword}
                                     onChange={(e) => setKeyword(e.target.value)}
                                     onFocus={() => setIsSearchFocused(true)}
-                                    className="w-full pl-4 pr-10 py-2 border border-blue-600 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all text-sm"
+                                    className="w-full pl-11 pr-16 py-2.5 bg-gray-100/80 border border-transparent rounded-full focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium placeholder-gray-500 text-gray-900"
                                 />
-                                <button type="submit" className="absolute right-0 top-0 h-full flex items-center px-4 bg-blue-600 rounded-r-full text-white cursor-pointer hover:bg-blue-700 transition">
-                                    <Search size={18} />
+                                <button type="submit" className="absolute right-1 top-1 bottom-1 px-4 bg-blue-600 rounded-full text-white cursor-pointer hover:bg-blue-700 hover:shadow-md transition-all text-sm font-semibold">
+                                    Tìm
                                 </button>
                             </form>
 
@@ -192,86 +195,69 @@ const Navbar = () => {
                                 <Link to="/notifications" className="text-gray-500 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 hidden sm:block">
                                     <Bell size={20} />
                                 </Link>
-                                <div className="flex items-center gap-2 relative group cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition">
-                                    <div className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full font-bold">
+                                <div className="flex items-center gap-3 relative group cursor-pointer p-1.5 pr-3 rounded-full hover:bg-gray-100 transition border border-transparent hover:border-gray-200">
+                                    <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-full font-bold shadow-sm">
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </div>
-                                    <span className="text-sm font-medium text-gray-700 hidden sm:block">Xin chào, {user?.name?.split(' ')[0]}</span>
+                                    <span className="text-sm font-semibold text-gray-700 hidden sm:block tracking-tight">Xin chào, {user?.name?.split(' ')[0]}</span>
                                     
                                     {/* Dropdown menu */}
-                                    <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                                        <div className="py-2">
+                                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden">
+                                        <div className="p-2">
                                             {/* Mobile: Show create product for sellers */}
                                             {isSeller && (
-                                                <Link to="/create-product" className="sm:hidden block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium border-b border-gray-100">
-                                                    <Plus size={16} className="inline mr-2" />
+                                                <Link to="/create-product" className="sm:hidden flex items-center px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition">
+                                                    <Plus size={16} className="mr-3 text-gray-400" />
                                                     Đăng bán sản phẩm
                                                 </Link>
                                             )}
 
                                             {isSeller && (
-                                                <Link to="/seller/products" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium border-b border-gray-100">
+                                                <Link to="/seller/products" className="flex items-center px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition">
+                                                    <Clock size={16} className="mr-3 text-gray-400" />
                                                     Quản lý tin đăng
                                                 </Link>
                                             )}
                                             
                                             {/* Mobile: Show apply seller for buyers */}
                                             {isBuyer && !isPendingSeller && (
-                                                <Link to="/apply-seller" className="sm:hidden block px-4 py-2 text-sm text-green-700 hover:bg-green-50 font-medium border-b border-gray-100">
-                                                    <ShieldCheck size={16} className="inline mr-2" />
+                                                <Link to="/apply-seller" className="sm:hidden flex items-center px-3 py-2.5 text-sm text-green-700 hover:bg-green-50 font-medium rounded-xl transition">
+                                                    <ShieldCheck size={16} className="mr-3 text-green-500" />
                                                     Đăng ký người bán
                                                 </Link>
                                             )}
 
                                             {/* Show pending status */}
                                             {isPendingSeller && (
-                                                <Link to="/my-seller-application" className="block px-4 py-2 text-sm text-orange-700 hover:bg-orange-50 font-medium border-b border-gray-100">
-                                                    Đơn đăng ký đang chờ duyệt
-                                                </Link>
-                                            )}
-
-                                            {/* Admin link for mobile */}
-                                            {isAdmin && (
-                                                <Link to="/admin/seller-applications" className="sm:hidden block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium border-b border-gray-100">
-                                                    <ShieldCheck size={16} className="inline mr-2" />
-                                                    Quản lý Admin
+                                                <Link to="/my-seller-application" className="flex items-center px-3 py-2.5 text-sm text-orange-700 hover:bg-orange-50 font-medium rounded-xl transition">
+                                                    <Clock size={16} className="mr-3 text-orange-500" />
+                                                    Đơn đăng ký đang xử lý
                                                 </Link>
                                             )}
 
                                             {isAdmin && (
-                                                <Link to="/admin/categories" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium border-b border-gray-100">
-                                                    Quản lý danh mục
-                                                </Link>
+                                                <>
+                                                    <div className="h-px bg-gray-100 my-1 mx-2"></div>
+                                                    <div className="px-3 py-1.5 text-xs font-bold text-gray-400 uppercase tracking-wider">Quản trị viên</div>
+                                                    <Link to="/admin/seller-applications" className="sm:hidden flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý Admin</Link>
+                                                    <Link to="/admin/categories" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý danh mục</Link>
+                                                    <Link to="/admin/users" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý người dùng</Link>
+                                                    <Link to="/admin/moderation" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Kiểm duyệt tin đăng</Link>
+                                                    <Link to="/admin/settings" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Thiết lập hệ thống</Link>
+                                                </>
                                             )}
 
-                                            {isAdmin && (
-                                                <Link to="/admin/users" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium border-b border-gray-100">
-                                                    Quản lý người dùng
-                                                </Link>
-                                            )}
-
-                                            {isAdmin && (
-                                                <Link to="/admin/moderation" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium border-b border-gray-100">
-                                                    Kiểm duyệt tin đăng
-                                                </Link>
-                                            )}
-
-                                            {isAdmin && (
-                                                <Link to="/admin/settings" className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-medium border-b border-gray-100">
-                                                    Thiết lập hệ thống
-                                                </Link>
-                                            )}
-
-                                            <Link to="/watchlist" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 font-medium border-b border-gray-100 mb-1">Danh sách theo dõi</Link>
-                                            <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium">Đăng xuất</button>
+                                            <div className="h-px bg-gray-100 my-1 mx-2"></div>
+                                            <Link to="/watchlist" className="flex items-center px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium rounded-xl transition">Danh sách theo dõi</Link>
+                                            <button onClick={handleLogout} className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 font-bold rounded-xl transition mt-1">Đăng xuất</button>
                                         </div>
                                     </div>
                                 </div>
                             </>
                         ) : (
-                            <div className="text-sm font-medium flex items-center gap-4">
-                                <Link to="/login" className="text-blue-600 hover:underline">Đăng nhập</Link>
-                                <Link to="/register" className="text-blue-600 hover:underline">Đăng ký</Link>
+                            <div className="text-sm font-medium flex items-center gap-2">
+                                <Link to="/login" className="px-4 py-2 text-gray-600 hover:text-blue-600 transition font-bold">Đăng nhập</Link>
+                                <Link to="/register" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-bold">Đăng ký</Link>
                             </div>
                         )}
                     </div>

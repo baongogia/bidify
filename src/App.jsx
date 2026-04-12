@@ -3,6 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AdminLayout from './components/AdminLayout';
 import AdminRoute from './components/AdminRoute';
 import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
@@ -26,10 +27,12 @@ const App = () => {
 	return (
 		<AuthProvider>
 			<BrowserRouter>
-				<Navbar />
-				<Routes>
-					<Route path="/" element={<ProductListPage />} />
-					<Route path="/products/:id" element={<ProductDetailPage />} />
+				<div className="flex flex-col min-h-screen">
+					<Navbar />
+					<main className="flex-1 bg-gray-50/50">
+						<Routes>
+							<Route path="/" element={<ProductListPage />} />
+							<Route path="/products/:id" element={<ProductDetailPage />} />
 					<Route path="/login" element={<LoginPage />} />
 					<Route path="/register" element={<RegisterPage />} />
 					<Route
@@ -129,7 +132,10 @@ const App = () => {
 						)}
 					/>
 					<Route path="*" element={<Navigate to="/" replace />} />
-				</Routes>
+						</Routes>
+					</main>
+					<Footer />
+				</div>
 			</BrowserRouter>
 		</AuthProvider>
 	);
