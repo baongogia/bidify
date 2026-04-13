@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { getCategories } from '../services/categoryService';
 import { createProduct } from '../services/productService';
+import CustomSelect from '../components/CustomSelect';
 
 const CreateProductPage = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, control, formState: { errors } } = useForm();
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [categories, setCategories] = useState([]);
@@ -104,15 +105,22 @@ const CreateProductPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Danh mục <span className="text-red-500">*</span>
                         </label>
-                        <select 
-                            {...register("category_id", { required: "Danh mục là bắt buộc" })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
-                        >
-                            <option value="">-- Chọn danh mục --</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
+                        <Controller
+                            name="category_id"
+                            control={control}
+                            rules={{ required: "Danh mục là bắt buộc" }}
+                            render={({ field }) => (
+                                <CustomSelect
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    options={[
+                                        { value: "", label: "-- Chọn danh mục --" },
+                                        ...categories.map(cat => ({ value: cat.id, label: cat.name }))
+                                    ]}
+                                    error={errors.category_id}
+                                />
+                            )}
+                        />
                         {errors.category_id && <span className="text-xs text-red-500 mt-1 block">{errors.category_id.message}</span>}
                     </div>
 
@@ -179,17 +187,26 @@ const CreateProductPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Thời gian đấu giá (giờ) <span className="text-red-500">*</span>
                         </label>
-                        <select 
-                            {...register("duration_hours", { required: "Thời gian là bắt buộc" })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
-                        >
-                            <option value="">-- Chọn thời gian --</option>
-                            <option value="24">24 giờ (1 ngày)</option>
-                            <option value="48">48 giờ (2 ngày)</option>
-                            <option value="72">72 giờ (3 ngày)</option>
-                            <option value="120">120 giờ (5 ngày)</option>
-                            <option value="168">168 giờ (7 ngày)</option>
-                        </select>
+                        <Controller
+                            name="duration_hours"
+                            control={control}
+                            rules={{ required: "Thời gian là bắt buộc" }}
+                            render={({ field }) => (
+                                <CustomSelect
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    options={[
+                                        { value: "", label: "-- Chọn thời gian --" },
+                                        { value: "24", label: "24 giờ (1 ngày)" },
+                                        { value: "48", label: "48 giờ (2 ngày)" },
+                                        { value: "72", label: "72 giờ (3 ngày)" },
+                                        { value: "120", label: "120 giờ (5 ngày)" },
+                                        { value: "168", label: "168 giờ (7 ngày)" }
+                                    ]}
+                                    error={errors.duration_hours}
+                                />
+                            )}
+                        />
                         {errors.duration_hours && <span className="text-xs text-red-500 mt-1 block">{errors.duration_hours.message}</span>}
                     </div>
 

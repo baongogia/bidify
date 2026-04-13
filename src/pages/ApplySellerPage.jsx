@@ -1,13 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { getMyApplication, submitSellerApplication } from '../services/sellerApplicationService';
 import { getCategories } from '../services/categoryService';
 import { Store, Phone, MapPin, FileText, Clock, AlertCircle, Grid } from 'lucide-react';
+import CustomSelect from '../components/CustomSelect';
 
 const ApplySellerPage = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit, control, formState: { errors } } = useForm();
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -191,15 +192,22 @@ const ApplySellerPage = () => {
                                     <Grid size={18} />
                                     Ngành hàng chính <span className="text-red-500">*</span>
                                 </label>
-                                <select
-                                    {...register('category_id', { required: 'Vui lòng chọn ngành hàng' })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
-                                >
-                                    <option value="">-- Chọn ngành hàng --</option>
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
+                                <Controller
+                                    name="category_id"
+                                    control={control}
+                                    rules={{ required: "Vui lòng chọn ngành hàng" }}
+                                    render={({ field }) => (
+                                        <CustomSelect
+                                            value={field.value || ""}
+                                            onChange={field.onChange}
+                                            options={[
+                                                { value: "", label: "-- Chọn ngành hàng --" },
+                                                ...categories.map(cat => ({ value: cat.id, label: cat.name }))
+                                            ]}
+                                            error={errors.category_id}
+                                        />
+                                    )}
+                                />
                                 {errors.category_id && <span className="text-xs text-red-500 mt-1 block">{errors.category_id.message}</span>}
                             </div>
 
@@ -342,15 +350,22 @@ const ApplySellerPage = () => {
                             <Grid size={18} />
                             Ngành hàng chính <span className="text-red-500">*</span>
                         </label>
-                        <select 
-                            {...register("category_id", { required: "Vui lòng chọn ngành hàng" })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
-                        >
-                            <option value="">-- Chọn ngành hàng --</option>
-                            {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
+                        <Controller
+                            name="category_id"
+                            control={control}
+                            rules={{ required: "Vui lòng chọn ngành hàng" }}
+                            render={({ field }) => (
+                                <CustomSelect
+                                    value={field.value || ""}
+                                    onChange={field.onChange}
+                                    options={[
+                                        { value: "", label: "-- Chọn ngành hàng --" },
+                                        ...categories.map(cat => ({ value: cat.id, label: cat.name }))
+                                    ]}
+                                    error={errors.category_id}
+                                />
+                            )}
+                        />
                         {errors.category_id && <span className="text-xs text-red-500 mt-1 block">{errors.category_id.message}</span>}
                     </div>
 

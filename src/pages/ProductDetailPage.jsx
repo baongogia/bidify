@@ -9,8 +9,10 @@ import SkeletonDetail from '../components/SkeletonDetail';
 import CountdownTimer from '../components/CountdownTimer';
 import BidHistoryModal from '../components/BidHistoryModal';
 import { Heart, Tag, User, ShieldCheck, Clock, ChevronRight, Minus, Plus } from 'lucide-react';
+import { useModal } from '../context/ModalContext';
 
 const ProductDetailPage = () => {
+    const { showAlert } = useModal();
     const { id } = useParams();
     const navigate = useNavigate();
     const { isAuthenticated, user } = useContext(AuthContext);
@@ -121,7 +123,7 @@ const ProductDetailPage = () => {
                     created_at: new Date().toISOString()
                 });
                 setBidAmount(nextMinBid);
-                alert('Đặt giá thành công!');
+                showAlert('Thành công', 'Đặt giá thành công!');
             }
         } catch (err) {
             setBidError(err.message || 'Đặt giá thất bại');

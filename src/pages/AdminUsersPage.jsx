@@ -16,6 +16,8 @@ import {
     AlertTriangle,
     ChevronDown
 } from 'lucide-react';
+import CustomSelect from '../components/CustomSelect';
+import Modal from '../components/Modal';
 
 /* ──────────────────── Helpers ──────────────────── */
 const ROLE_BADGE = {
@@ -27,25 +29,6 @@ const ROLE_BADGE = {
 const STATUS_BADGE = {
     LOCKED: 'bg-red-100 text-red-700 border border-red-200',
     ACTIVE: 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-};
-
-/* ──────────────────── Modal ──────────────────── */
-const Modal = ({ open, title, children, onClose }) => {
-    if (!open) return null;
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
-                        <X size={18} />
-                    </button>
-                </div>
-                {children}
-            </div>
-        </div>
-    );
 };
 
 /* ──────────────────── Page ──────────────────── */
@@ -162,25 +145,25 @@ const AdminUsersPage = () => {
                             className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
                         />
                     </div>
-                    <select
+                    <CustomSelect
                         value={filters.role}
-                        onChange={(e) => setFilters((p) => ({ ...p, role: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    >
-                        <option value="">Tất cả vai trò</option>
-                        <option value="BUYER">Người mua (BUYER)</option>
-                        <option value="SELLER">Người bán (SELLER)</option>
-                        <option value="ADMIN">Quản trị viên (ADMIN)</option>
-                    </select>
-                    <select
+                        onChange={(val) => setFilters((p) => ({ ...p, role: val }))}
+                        options={[
+                            { value: "", label: "Tất cả vai trò" },
+                            { value: "BUYER", label: "Người mua (BUYER)" },
+                            { value: "SELLER", label: "Người bán (SELLER)" },
+                            { value: "ADMIN", label: "Quản trị viên (ADMIN)" }
+                        ]}
+                    />
+                    <CustomSelect
                         value={filters.lock_status}
-                        onChange={(e) => setFilters((p) => ({ ...p, lock_status: e.target.value }))}
-                        className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-                    >
-                        <option value="">Tất cả trạng thái</option>
-                        <option value="ACTIVE">Đang hoạt động</option>
-                        <option value="LOCKED">Đã bị khóa</option>
-                    </select>
+                        onChange={(val) => setFilters((p) => ({ ...p, lock_status: val }))}
+                        options={[
+                            { value: "", label: "Tất cả trạng thái" },
+                            { value: "ACTIVE", label: "Đang hoạt động" },
+                            { value: "LOCKED", label: "Đã bị khóa" }
+                        ]}
+                    />
                     <button
                         onClick={fetchUsers}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition"

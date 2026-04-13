@@ -2,8 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getCategories } from '../services/categoryService';
 import { deleteMyProduct, getMyProducts, updateMyProduct } from '../services/productService';
+import CustomSelect from '../components/CustomSelect';
+import { useModal } from '../context/ModalContext';
 
 const SellerProductsPage = () => {
+    const { showAlert, showConfirm } = useModal();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -86,24 +89,25 @@ const SellerProductsPage = () => {
             if (res.success) {
                 await fetchData();
                 cancelEdit();
-                alert('Cập nhật sản phẩm thành công');
+                showAlert('Thành công', 'Cập nhật sản phẩm thành công');
             }
         } catch (err) {
-            alert(err.message || 'Không thể cập nhật sản phẩm');
+            showAlert('Lỗi', err.message || 'Không thể cập nhật sản phẩm');
         }
     };
 
     const removeProduct = async (id) => {
-        if (!window.confirm('Bạn có chắc muốn xóa tin này?')) return;
+        const confirmed = await showConfirm('Xác nhận', 'Bạn có chắc muốn xóa tin này?');
+        if (!confirmed) return;
 
         try {
             const res = await deleteMyProduct(id);
             if (res.success) {
                 await fetchData();
-                alert('Đã xóa sản phẩm');
+                showAlert('Thành công', 'Đã xóa sản phẩm');
             }
         } catch (err) {
-            alert(err.message || 'Không thể xóa sản phẩm');
+            showAlert('Lỗi', err.message || 'Không thể xóa sản phẩm');
         }
     };
 
@@ -178,30 +182,28 @@ const SellerProductsPage = () => {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-                                                <select
+                                                <CustomSelect
                                                     value={form.category_id}
-                                                    onChange={(e) => setForm((prev) => ({ ...prev, category_id: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                >
-                                                    <option value="">-- Chọn danh mục --</option>
-                                                    {categories.map((c) => (
-                                                        <option key={c.id} value={c.id}>{c.name}</option>
-                                                    ))}
-                                                </select>
+                                                    onChange={(val) => setForm((prev) => ({ ...prev, category_id: val }))}
+                                                    options={[
+                                                        { value: "", label: "-- Chọn danh mục --" },
+                                                        ...categories.map((c) => ({ value: c.id, label: c.name }))
+                                                    ]}
+                                                />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Tình trạng</label>
-                                                <select
+                                                <CustomSelect
                                                     value={form.condition_status}
-                                                    onChange={(e) => setForm((prev) => ({ ...prev, condition_status: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                >
-                                                    <option value="NEW">Mới</option>
-                                                    <option value="USED">Đã sử dụng</option>
-                                                </select>
+                                                    onChange={(val) => setForm((prev) => ({ ...prev, condition_status: val }))}
+                                                    options={[
+                                                        { value: "NEW", label: "Mới" },
+                                                        { value: "USED", label: "Đã sử dụng" }
+                                                    ]}
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Giá khởi điểm</label>
@@ -214,16 +216,16 @@ const SellerProductsPage = () => {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1">Thời hạn (giờ)</label>
-                                                <select
+                                                <CustomSelect
                                                     value={form.duration_hours}
-                                                    onChange={(e) => setForm((prev) => ({ ...prev, duration_hours: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                                                >
-                                                    <option value={24}>1 ngày</option>
-                                                    <option value={72}>3 ngày</option>
-                                                    <option value={168}>7 ngày</option>
-                                                    <option value={240}>10 ngày</option>
-                                                </select>
+                                                    onChange={(val) => setForm((prev) => ({ ...prev, duration_hours: val }))}
+                                                    options={[
+                                                        { value: 24, label: "1 ngày" },
+                                                        { value: 72, label: "3 ngày" },
+                                                        { value: 168, label: "7 ngày" },
+                                                        { value: 240, label: "10 ngày" }
+                                                    ]}
+                                                />
                                             </div>
                                         </div>
 

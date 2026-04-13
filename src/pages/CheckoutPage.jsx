@@ -3,8 +3,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getProductDetail, confirmPayment } from '../services/productService';
 import { AuthContext } from '../context/AuthContext';
 import { CheckCircle, MapPin, CreditCard, ShieldCheck } from 'lucide-react';
+import { useModal } from '../context/ModalContext';
 
 const CheckoutPage = () => {
+    const { showAlert, showConfirm } = useModal();
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
@@ -51,7 +53,7 @@ const CheckoutPage = () => {
         e.preventDefault();
         
         if (!shippingData.fullName || !shippingData.phone || !shippingData.address) {
-            alert('Vui lòng điền đầy đủ thông tin giao hàng!');
+            showAlert('Cảnh báo', 'Vui lòng điền đầy đủ thông tin giao hàng!');
             return;
         }
 
@@ -62,11 +64,11 @@ const CheckoutPage = () => {
             const res = await confirmPayment(id, shippingData);
             
             if (res.success) {
-                alert('Thanh toán thành công! Người bán sẽ sớm liên hệ giao hàng cho bạn.');
+                await showAlert('Thành công', 'Thanh toán thành công! Người bán sẽ sớm liên hệ giao hàng cho bạn.');
                 navigate('/');
             }
         } catch (err) {
-            alert(err.message || 'Thanh toán thất bại.');
+            showAlert('Lỗi', err.message || 'Thanh toán thất bại.');
         } finally {
             setIsSubmitting(false);
         }

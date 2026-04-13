@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import SkeletonCard from '../components/SkeletonCard';
 import CountdownTimer from '../components/CountdownTimer';
 import { Heart, ShieldCheck, Zap, Lock, Search, Filter, ChevronDown } from 'lucide-react';
+import { useModal } from '../context/ModalContext';
 
 const CustomSelect = ({ value, onChange, options, minWidth = '150px' }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -55,6 +56,7 @@ const CustomSelect = ({ value, onChange, options, minWidth = '150px' }) => {
 
 const ProductListPage = () => {
     const { isAuthenticated } = useContext(AuthContext);
+    const { showAlert } = useModal();
     const navigate = useNavigate();
     const location = useLocation();
     const [products, setProducts] = useState([]);
@@ -126,7 +128,7 @@ const ProductListPage = () => {
             const isWatchlisted = !!res?.data?.isWatchlisted;
             setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, is_watchlisted: isWatchlisted } : p)));
         } catch (err) {
-            if (err.message) alert(err.message);
+            if (err.message) showAlert('Lỗi', err.message);
         }
     };
 

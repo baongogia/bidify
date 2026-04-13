@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { getAllApplications, approveApplication, rejectApplication } from '../services/sellerApplicationService';
 import { CheckCircle, XCircle, Clock, User, Store, Phone, MapPin, FileText } from 'lucide-react';
+import { useModal } from '../context/ModalContext';
 
 const AdminSellerApplicationsPage = () => {
+    const { showAlert, showConfirm } = useModal();
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('PENDING');
@@ -29,17 +31,18 @@ const AdminSellerApplicationsPage = () => {
     };
 
     const handleApprove = async (id) => {
-        if (!confirm('Bạn có chắc muốn phê duyệt đơn này?')) return;
+        const confirmed = await showConfirm('Xác nhận', 'Bạn có chắc muốn phê duyệt đơn này?');
+        if (!confirmed) return;
         
         try {
             setActionLoading(id);
             const res = await approveApplication(id);
             if (res.success) {
-                alert('Đã phê duyệt thành công!');
+                showAlert('Thành công', 'Đã phê duyệt thành công!');
                 fetchApplications();
             }
         } catch (err) {
-            alert(err.message || 'Lỗi khi phê duyệt');
+            showAlert('Lỗi', err.message || 'Lỗi khi phê duyệt');
         } finally {
             setActionLoading(null);
         }
@@ -47,7 +50,7 @@ const AdminSellerApplicationsPage = () => {
 
     const handleReject = async (id) => {
         if (!rejectNote.trim()) {
-            alert('Vui lòng nhập lý do từ chối');
+            showAlert('Cảnh báo', 'Vui lòng nhập lý do từ chối');
             return;
         }
 
@@ -55,13 +58,13 @@ const AdminSellerApplicationsPage = () => {
             setActionLoading(id);
             const res = await rejectApplication(id, rejectNote);
             if (res.success) {
-                alert('Đã từ chối đơn');
+                showAlert('Thành công', 'Đã từ chối đơn');
                 setRejectingId(null);
                 setRejectNote('');
                 fetchApplications();
             }
         } catch (err) {
-            alert(err.message || 'Lỗi khi từ chối');
+            showAlert('Lỗi', err.message || 'Lỗi khi từ chối');
         } finally {
             setActionLoading(null);
         }

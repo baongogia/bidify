@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
+import { ModalProvider } from './context/ModalContext';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
 import AdminModerationPage from './pages/AdminModerationPage';
 import AdminSellerApplicationsPage from './pages/AdminSellerApplicationsPage';
@@ -26,7 +27,8 @@ import WatchlistPage from './pages/WatchlistPage';
 const App = () => {
 	return (
 		<AuthProvider>
-			<BrowserRouter>
+			<ModalProvider>
+				<BrowserRouter>
 				<div className="flex flex-col min-h-screen">
 					<Navbar />
 					<main className="flex-1 bg-gray-50/50">
@@ -137,6 +139,7 @@ const App = () => {
 					<Footer />
 				</div>
 			</BrowserRouter>
+			</ModalProvider>
 		</AuthProvider>
 	);
 };

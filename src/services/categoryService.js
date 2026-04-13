@@ -1,8 +1,7 @@
 import axios from '../lib/axios';
 
 export const getCategories = async () => {
-    const response = await axios.get('/categories');
-    return response.data;
+    return await axios.get('/categories');
 };
 
 export const createCategory = async (name, parent_id = null) => {
