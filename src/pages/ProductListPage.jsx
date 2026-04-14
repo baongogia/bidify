@@ -5,7 +5,7 @@ import { toggleWatchlist } from '../services/watchlistService';
 import { AuthContext } from '../context/AuthContext';
 import SkeletonCard from '../components/SkeletonCard';
 import CountdownTimer from '../components/CountdownTimer';
-import { Heart, ShieldCheck, Zap, Lock, Search, Filter, ChevronDown } from 'lucide-react';
+import { Heart, ShieldCheck, Zap, Lock, Search, Filter, ChevronDown, Clock } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 
 const CustomSelect = ({ value, onChange, options, minWidth = '150px' }) => {
@@ -132,6 +132,85 @@ const ProductListPage = () => {
         }
     };
 
+    const renderProductCard = (p) => {
+        const isEnded = p.status !== 'ACTIVE' || new Date(p.end_time) <= new Date();
+        const isUpcoming = p.status === 'ACTIVE' && new Date(p.start_time) > new Date();
+        const hoursLeft = (new Date(p.end_time) - new Date()) / (1000 * 60 * 60);
+        const isEndingSoon = !isUpcoming && !isEnded && hoursLeft > 0 && hoursLeft < 24;
+
+        return (
+            <Link to={`/products/${p.id}`} key={p.id} className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-xl shadow-gray-200/40 ring-1 ring-gray-100 hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 hover:-translate-y-2 relative">
+                {isEnded && (
+                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-4">
+                        <div className="bg-gray-900 text-white px-8 py-3 rounded-lg font-black text-sm shadow-2xl tracking-widest transform -rotate-12 border-2 border-white/20 scale-110">
+                            ĐÃ KẾT THÚC
+                        </div>
+                    </div>
+                )}
+                
+                <div className="aspect-[1/1] bg-gray-50 relative overflow-hidden">
+                    {isEndingSoon && (
+                        <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg animate-pulse">
+                            <Zap size={10} fill="currentColor" /> Sắp kết thúc
+                        </div>
+                    )}
+                    {isUpcoming && (
+                        <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
+                            <Clock size={10} /> Sắp diễn ra
+                        </div>
+                    )}
+                    {p.images && p.images.length > 0 ? (
+                        <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs text-center p-4 capitalize">Không có ảnh</div>
+                    )}
+                    
+                    <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    <button 
+                        className={`absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-lg hover:bg-white transition shadow-lg z-10 scale-90 group-hover:scale-100 ${p.is_watchlisted ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                        onClick={(e) => handleWatchToggle(p.id, e)}
+                    >
+                        <Heart size={20} strokeWidth={2.5} fill={p.is_watchlisted ? 'currentColor' : 'none'} />
+                    </button>
+                </div>
+
+                <div className="p-6 flex flex-col flex-1">
+                    <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 opacity-60">
+                        {p.category_name || 'Đấu giá'}
+                    </div>
+                    <h3 className="font-extrabold text-gray-900 group-hover:text-blue-600 transition tracking-tight line-clamp-2 text-lg mb-4 leading-tight">
+                        {p.title}
+                    </h3>
+                    
+                    <div className="mt-auto pt-4 border-t border-gray-100">
+                        <div className="flex justify-between items-end">
+                            <div>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">
+                                    {isUpcoming ? 'Giá khởi điểm' : 'Giá hiện tại'}
+                                </p>
+                                <div className="text-2xl font-black text-gray-900 tracking-tighter">
+                                    {Number(p.current_price).toLocaleString('vi-VN')} <span className="text-xs font-bold text-gray-400">₫</span>
+                                </div>
+                            </div>
+                            
+                            {!isEnded && (
+                                <div className={`flex flex-col items-end ${isUpcoming ? 'bg-blue-600' : 'bg-gray-900'} text-white px-3 py-1.5 rounded-lg shadow-lg`}>
+                                    <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-80">
+                                        {isUpcoming ? 'Bắt đầu sau' : 'Kết thúc sau'}
+                                    </span>
+                                    <div className="text-[11px] font-bold">
+                                        <CountdownTimer endTime={isUpcoming ? p.start_time : p.end_time} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    };
+
     const isLanding = !filter.keyword && !filter.category_id && !filter.condition && filter.page === 1;
 
     // Components to render filters horizontally
@@ -246,16 +325,7 @@ const ProductListPage = () => {
             )}
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {isLanding ? (
-                    <div className="flex flex-col mb-10 mt-12">
-                        <div className="flex items-center gap-3 mb-2">
-                             <div className="h-[2px] w-8 bg-blue-600"></div>
-                             <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Sàn phẩm mới nhất</span>
-                        </div>
-                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Sản phẩm đang đấu giá</h2>
-                        <p className="text-gray-500 font-medium mt-2">Đừng bỏ lỡ cơ hội sở hữu những vật phẩm độc đáo đang được săn đón</p>
-                    </div>
-                ) : (
+                {!isLanding && (
                     <div className="mb-10">
                         <h1 className="text-3xl font-black text-gray-900 tracking-tighter">
                             {filter.keyword ? `KẾT QUẢ CHO "${filter.keyword.toUpperCase()}"` : 'KHÁM PHÁ DANH MỤC'}
@@ -274,117 +344,91 @@ const ProductListPage = () => {
                             {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
                         </div>
                     ) : products.length === 0 ? (
-                        <div className="py-20 text-center">
-                            <p className="text-gray-500 text-lg">Không tìm thấy sản phẩm phù hợp với bộ lọc hiện tại.</p>
+                        <div className="py-20 text-center bg-white rounded-lg border border-dashed border-gray-200">
+                             <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mx-auto mb-4">
+                                 <Search size={32} />
+                             </div>
+                            <p className="text-gray-500 text-lg font-bold">Không tìm thấy sản phẩm nào</p>
+                            <p className="text-gray-400 text-sm mt-1">Vui lòng thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm.</p>
                         </div>
                     ) : (
-                        <div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {products.map(p => {
-                                    const isEnded = p.status !== 'ACTIVE' || new Date(p.end_time) <= new Date();
-                                    const isUpcoming = p.status === 'ACTIVE' && new Date(p.start_time) > new Date();
-                                    const hoursLeft = (new Date(p.end_time) - new Date()) / (1000 * 60 * 60);
-                                    const isEndingSoon = !isUpcoming && !isEnded && hoursLeft > 0 && hoursLeft < 24;
+                        <div className="space-y-16">
+                            {/* Active Auctions Section */}
+                            {(() => {
+                                const activeList = products.filter(p => !((p.status === 'ACTIVE' && new Date(p.start_time) > new Date()) || (p.status !== 'ACTIVE' || new Date(p.end_time) <= new Date())));
+                                if (activeList.length === 0 && !isLanding) return null;
+                                if (activeList.length === 0 && isLanding && products.filter(p => p.status === 'ACTIVE' && new Date(p.start_time) > new Date()).length === 0) return null;
 
-                                    return (
-                                    <Link to={`/products/${p.id}`} key={p.id} className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-xl shadow-gray-200/40 ring-1 ring-gray-100 hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 hover:-translate-y-2 relative">
-                                        {isEnded && (
-                                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-4">
-                                                <div className="bg-gray-900 text-white px-8 py-3 rounded-lg font-black text-sm shadow-2xl tracking-widest transform -rotate-12 border-2 border-white/20 scale-110">
-                                                    ĐÃ KẾT THÚC
+                                return (
+                                    <section>
+                                        {(isLanding || activeList.length > 0) && (
+                                            <div className="flex flex-col mb-8">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                     <div className="h-[2px] w-8 bg-blue-600"></div>
+                                                     <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Đang diễn ra</span>
                                                 </div>
+                                                <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Sản phẩm đang đấu giá</h2>
                                             </div>
                                         )}
-                                        
-                                        <div className="aspect-[1/1] bg-gray-50 relative overflow-hidden">
-                                            {isEndingSoon && (
-                                                <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg animate-pulse">
-                                                    <Zap size={10} fill="currentColor" /> Sắp kết thúc
-                                                </div>
-                                            )}
-                                            {isUpcoming && (
-                                                <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
-                                                    <Clock size={10} /> Sắp diễn ra
-                                                </div>
-                                            )}
-                                            {p.images && p.images.length > 0 ? (
-                                                <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">Không có ảnh</div>
-                                            )}
-                                            
-                                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                            
-                                            <button 
-                                                className={`absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-lg hover:bg-white transition shadow-lg z-10 scale-90 group-hover:scale-100 ${p.is_watchlisted ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
-                                                onClick={(e) => handleWatchToggle(p.id, e)}
-                                            >
-                                                <Heart size={20} strokeWidth={2.5} fill={p.is_watchlisted ? 'currentColor' : 'none'} />
-                                            </button>
-                                        </div>
+                                        {activeList.length > 0 ? (
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {activeList.map(p => renderProductCard(p))}
+                                            </div>
+                                        ) : isLanding && (
+                                            <div className="py-12 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                                <p className="text-gray-400 font-medium">Hiện không có sản phẩm nào đang trong phiên đấu giá.</p>
+                                            </div>
+                                        )}
+                                    </section>
+                                );
+                            })()}
 
-                                        <div className="p-6 flex flex-col flex-1">
-                                            <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 opacity-60">
-                                                {p.category_name || 'Đấu giá'}
+                            {/* Upcoming Auctions Section */}
+                            {(() => {
+                                const upcomingList = products.filter(p => p.status === 'ACTIVE' && new Date(p.start_time) > new Date());
+                                if (upcomingList.length === 0) return null;
+
+                                return (
+                                    <section>
+                                        <div className="flex flex-col mb-8">
+                                            <div className="flex items-center gap-3 mb-2">
+                                                 <div className="h-[2px] w-8 bg-amber-500"></div>
+                                                 <span className="text-xs font-black text-amber-500 uppercase tracking-widest">Sắp lên sàn</span>
                                             </div>
-                                            <h3 className="font-extrabold text-gray-900 group-hover:text-blue-600 transition tracking-tight line-clamp-2 text-lg mb-4 leading-tight">
-                                                {p.title}
-                                            </h3>
-                                            
-                                            <div className="mt-auto pt-4 border-t border-gray-100">
-                                                <div className="flex justify-between items-end">
-                                                    <div>
-                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">
-                                                            {isUpcoming ? 'Giá khởi điểm' : 'Giá hiện tại'}
-                                                        </p>
-                                                        <div className="text-2xl font-black text-gray-900 tracking-tighter">
-                                                            {Number(p.current_price).toLocaleString('vi-VN')} <span className="text-xs font-bold text-gray-400">₫</span>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    {!isEnded && (
-                                                        <div className={`flex flex-col items-end ${isUpcoming ? 'bg-blue-600' : 'bg-gray-900'} text-white px-3 py-1.5 rounded-lg shadow-lg`}>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-80">
-                                                                {isUpcoming ? 'Bắt đầu sau' : 'Kết thúc sau'}
-                                                            </span>
-                                                            <div className="text-[11px] font-bold">
-                                                                <CountdownTimer endTime={isUpcoming ? p.start_time : p.end_time} />
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <h2 className="text-3xl font-black text-gray-900 tracking-tighter">Phiên đấu giá sắp bắt đầu</h2>
                                         </div>
-                                    </Link>
-                                    );
-                                })}
-                            </div>
-                            
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="mt-12 flex justify-center gap-2">
-                                    <button 
-                                        disabled={filter.page === 1} 
-                                        onClick={() => setFilter({ ...filter, page: filter.page - 1 })}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition"
-                                    >
-                                        Trước
-                                    </button>
-                                    <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg">
-                                        Trang {filter.page} / {totalPages}
-                                    </div>
-                                    <button 
-                                        disabled={filter.page === totalPages} 
-                                        onClick={() => setFilter({ ...filter, page: filter.page + 1 })}
-                                        className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition"
-                                    >
-                                        Sau
-                                    </button>
-                                </div>
-                            )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                            {upcomingList.map(p => renderProductCard(p))}
+                                        </div>
+                                    </section>
+                                );
+                            })()}
                         </div>
                     )}
                 </div>
+                            
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-12 flex justify-center gap-2">
+                        <button 
+                            disabled={filter.page === 1} 
+                            onClick={() => setFilter({ ...filter, page: filter.page - 1 })}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+                        >
+                            Trước
+                        </button>
+                        <div className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg">
+                            Trang {filter.page} / {totalPages}
+                        </div>
+                        <button 
+                            disabled={filter.page === totalPages} 
+                            onClick={() => setFilter({ ...filter, page: filter.page + 1 })}
+                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 disabled:opacity-50 transition"
+                        >
+                            Sau
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );

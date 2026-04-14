@@ -69,7 +69,7 @@ const SellerProductsPage = () => {
         }
     };
 
-    const isEditable = (p) => ['DRAFT', 'ACTIVE'].includes(p.status) && Number(p.total_bids) === 0;
+    const isEditable = (p) => ['DRAFT', 'PENDING', 'ACTIVE'].includes(p.status) && Number(p.total_bids) === 0;
 
     const startEdit = (product) => {
         const start = dayjs(product.start_time);
