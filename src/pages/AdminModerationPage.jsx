@@ -18,17 +18,18 @@ import {
     Tag,
     User,
     ExternalLink,
-    Filter
+    Filter,
+    Search
 } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 import CustomModal from '../components/Modal';
 
 /* ──────────────────── Constants ──────────────────── */
 const STATUS_TABS = [
-    { key: 'PENDING', label: 'Chờ duyệt', color: 'bg-amber-500' },
-    { key: 'NEEDS_EDIT', label: 'Cần chỉnh sửa', color: 'bg-orange-500' },
-    { key: 'REJECTED', label: 'Đã từ chối', color: 'bg-red-500' },
-    { key: 'APPROVED', label: 'Đã duyệt', color: 'bg-emerald-500' }
+    { key: 'PENDING', label: 'Chờ duyệt' },
+    { key: 'NEEDS_EDIT', label: 'Cần sửa' },
+    { key: 'REJECTED', label: 'Đã từ chối' },
+    { key: 'APPROVED', label: 'Đã duyệt' }
 ];
 
 const STATUS_BADGE = {
@@ -41,7 +42,6 @@ const STATUS_BADGE = {
 const fmt = (n) =>
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
-/* ──────────────────── Page ──────────────────── */
 const AdminModerationPage = () => {
     const { showAlert, showConfirm } = useModal();
     const [status, setStatus] = useState('PENDING');
@@ -66,23 +66,23 @@ const AdminModerationPage = () => {
             const res = await getModerationProducts({ status, q: keyword });
             if (res.success) setProducts(res.data.products);
         } catch (err) {
-            showToast(err.message || 'Không tải được danh sách kiểm duyệt', 'error');
+            showToast(err.message || 'Không tải được danh sách', 'error');
         } finally {
             setLoading(false);
         }
     };
 
     const handleApprove = async (id, title) => {
-        const confirmed = await showConfirm("Duyệt tin đăng", `Bạn có chắc muốn duyệt công khai sản phẩm "${title}"?`);
+        const confirmed = await showConfirm("Duyệt tin đăng", `Phê duyệt sản phẩm "${title}"?`);
         if (!confirmed) return;
 
         try {
             setActionLoading(id);
             await approveModerationProduct(id);
-            showAlert("Thành công", `Đã duyệt thành công: "${title}"`);
+            showToast(`Đã duyệt: "${title}"`);
             await fetchProducts();
         } catch (err) {
-            showAlert("Lỗi", err.message || 'Không duyệt được tin đăng');
+            showAlert("Lỗi", err.message || 'Thao tác thất bại');
         } finally {
             setActionLoading(null);
         }
@@ -100,10 +100,10 @@ const AdminModerationPage = () => {
             setActionLoading(productId);
             if (action === 'reject') {
                 await rejectModerationProduct(productId, reasonText.trim());
-                showToast(`Đã từ chối: "${title}"`);
+                showToast(`Đã từ chối: "${title}"`, 'error');
             } else {
                 await requestEditModerationProduct(productId, reasonText.trim());
-                showToast(`Đã gửi yêu cầu chỉnh sửa: "${title}"`);
+                showToast(`Yêu cầu sửa: "${title}"`, 'warning');
             }
             setReasonModal({ open: false, productId: null, title: '', action: '' });
             setReasonText('');
@@ -115,215 +115,183 @@ const AdminModerationPage = () => {
         }
     };
 
-    const handleDeleteConfirm = async (id, title) => {
-        const confirmed = await showConfirm("Xác nhận xóa", `Bạn có chắc muốn xóa vĩnh viễn tin đăng "${title}"?`);
-        if (!confirmed) return;
-
+    const parseImages = (imgData) => {
+        if (!imgData) return [];
         try {
-            setActionLoading(id);
-            await deleteModerationProduct(id);
-            showAlert("Thành công", `Đã xóa tin đăng: "${title}"`);
-            await fetchProducts();
-        } catch (err) {
-            showAlert("Lỗi", err.message || 'Không xóa được tin đăng');
-        } finally {
-            setActionLoading(null);
+            return typeof imgData === 'string' ? JSON.parse(imgData) : imgData;
+        } catch (e) {
+            return [];
         }
     };
 
     return (
-        <div className="bg-gray-50/50 min-h-screen py-12">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-10 space-y-8">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <h1 className="text-3xl font-black text-gray-900 tracking-tight">Trung tâm Kiểm duyệt</h1>
-                        <p className="text-gray-500 mt-2 font-medium">Bảo vệ cộng đồng bằng cách kiểm tra kỹ lưỡng mọi tin đăng</p>
-                    </div>
-                    
-                    <div className="bg-white p-1 rounded-2xl shadow-sm border border-gray-100 flex gap-1">
-                        {STATUS_TABS.map(({ key, label, color }) => (
-                            <button
-                                key={key}
-                                onClick={() => setStatus(key)}
-                                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
-                                    status === key
-                                        ? `${color} text-white shadow-[0_4px_12px_-2px_rgba(0,0,0,0.2)]`
-                                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                                }`}
-                            >
-                                {label}
-                            </button>
-                        ))}
-                    </div>
+        <div className="bg-[#f0f2f5] min-h-full pb-20">
+            {/* Page Header */}
+            <div className="bg-white border-b border-gray-200 py-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-[#002B5B]">Kiểm duyệt tin đăng</h1>
+                    <p className="text-gray-500 mt-1 text-sm">Quản lý và phê duyệt sản phẩm đấu giá mới.</p>
                 </div>
-
-                {/* Search & Filter */}
-                <div className="bg-white rounded-[24px] shadow-xl shadow-blue-900/5 ring-1 ring-gray-100 p-6">
-                    <div className="relative group">
-                        <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                            <Filter size={18} className="text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-                        </div>
-                        <input
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
-                            placeholder="Lọc theo tên sản phẩm, người bán hoặc nội dung..."
-                            className="w-full pl-12 pr-4 py-4 bg-gray-50/50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-gray-900"
-                        />
-                        <button 
-                            onClick={fetchProducts}
-                            className="absolute right-2.5 top-2.5 bottom-2.5 px-6 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors"
+                
+                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                    {STATUS_TABS.map(({ key, label }) => (
+                        <button
+                            key={key}
+                            onClick={() => setStatus(key)}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                                status === key
+                                    ? 'bg-white text-[#002B5B] shadow-sm border border-gray-200'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            }`}
                         >
-                            Tìm kiếm
+                            {label}
                         </button>
-                    </div>
-                </div>
-
-                {/* Product list */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {loading ? (
-                        <div className="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-100 border-dashed">
-                             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                             <p className="text-gray-400 font-medium">Đang truy vấn dữ liệu...</p>
-                        </div>
-                    ) : products.length === 0 ? (
-                        <div className="col-span-full py-20 flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-100 border-dashed">
-                             <Filter className="text-gray-300 mb-4" size={48} />
-                             <p className="text-gray-400 font-medium">Hiện tại không có tin nào cần xử lý</p>
-                        </div>
-                    ) : (
-                        products.map((product) => (
-                            <div key={product.id} className="bg-white rounded-[24px] shadow-lg shadow-blue-900/5 ring-1 ring-gray-100 overflow-hidden flex flex-col group hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-300">
-                                <div className="p-6 flex-1">
-                                    <div className="flex justify-between items-start gap-4 mb-4">
-                                        <div className={`text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-lg border-2 ${STATUS_BADGE[product.moderation_status] || ''}`}>
-                                            {STATUS_TABS.find(t => t.key === product.moderation_status)?.label || product.moderation_status}
-                                        </div>
-                                        <Link to={`/products/${product.id}`} className="text-gray-400 hover:text-blue-600 transition" target="_blank">
-                                            <ExternalLink size={18} />
-                                        </Link>
-                                    </div>
-
-                                    <h3 className="text-lg font-bold text-gray-900 mb-4 line-clamp-2 leading-tight group-hover:text-blue-600 transition-colors">
-                                        {product.title}
-                                    </h3>
-
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-gray-400">
-                                                <User size={14} />
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-xs font-bold text-gray-900 truncate">{product.seller_name}</p>
-                                                <p className="text-[10px] text-gray-500 truncate">{product.seller_email}</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-50">
-                                                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tighter mb-1">Giá khởi điểm</p>
-                                                <p className="text-sm font-black text-gray-900">{fmt(product.starting_price)}</p>
-                                            </div>
-                                            <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter mb-1">Danh mục</p>
-                                                <p className="text-sm font-black text-gray-900 truncate">{product.category_name}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        {product.moderation_reason && (
-                                            <div className="p-3 bg-orange-50 rounded-xl border border-orange-100">
-                                                <div className="flex items-center gap-2 mb-1 text-orange-700 font-bold text-[10px] uppercase">
-                                                    <AlertTriangle size={12} /> Ghi chú từ chối
-                                                </div>
-                                                <p className="text-xs text-orange-800 leading-relaxed italic">"{product.moderation_reason}"</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="p-4 bg-gray-50/50 border-t border-gray-100 grid grid-cols-2 gap-2 mt-auto">
-                                    <button
-                                        disabled={actionLoading === product.id}
-                                        onClick={() => handleApprove(product.id, product.title)}
-                                        className="col-span-2 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                    >
-                                        <CheckCircle size={16} /> Duyệt ngay
-                                    </button>
-                                    <button
-                                        disabled={actionLoading === product.id}
-                                        onClick={() => openReasonModal(product.id, product.title, 'request-edit')}
-                                        className="py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-orange-50 hover:text-orange-700 hover:border-orange-200 transition-all flex items-center justify-center gap-2 text-xs"
-                                    >
-                                        <Edit3 size={14} /> Yêu cầu sửa
-                                    </button>
-                                    <button
-                                        disabled={actionLoading === product.id}
-                                        onClick={() => openReasonModal(product.id, product.title, 'reject')}
-                                        className="py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-red-50 hover:text-red-700 hover:border-red-200 transition-all flex items-center justify-center gap-2 text-xs"
-                                    >
-                                        <XCircle size={14} /> Từ chối
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    )}
+                    ))}
                 </div>
             </div>
 
-            {/* Reason Modal (reject / request-edit) */}
+            <div className="px-8 mt-8 max-w-[1400px] mx-auto">
+                {/* Search Bar */}
+                <div className="mb-8 max-w-xl relative">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && fetchProducts()}
+                        placeholder="Tìm theo ID, tên sản phẩm, seller..."
+                        className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-lg focus:border-[#002B5B] outline-none transition-all shadow-sm text-sm"
+                    />
+                </div>
+
+                {loading ? (
+                    <div className="py-20 text-center text-gray-400 text-sm">Đang tải dữ liệu...</div>
+                ) : products.length === 0 ? (
+                    <div className="py-20 text-center bg-white rounded-lg border border-gray-200">
+                         <p className="text-gray-500 text-sm italic">Không có tin đăng nào cần xử lý.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {products.map((product) => {
+                            const images = parseImages(product.images);
+                            const mainImg = images[0] || 'https://via.placeholder.com/400x300?text=No+Image';
+                            const price = Number(product.starting_price) || 0;
+
+                            return (
+                                <div key={product.id} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col hover:border-blue-300 transition-all">
+                                    {/* Image Section */}
+                                    <div className="w-full h-48 bg-gray-50 border-b border-gray-100 relative">
+                                        <img src={mainImg} alt="" className="w-full h-full object-cover" />
+                                        <div className="absolute top-3 right-3 flex gap-2">
+                                            <Link to={`/products/${product.id}`} className="p-2 bg-white/90 backdrop-blur-sm text-gray-400 hover:text-[#002B5B] rounded shadow-sm transition" target="_blank">
+                                                <ExternalLink size={14} />
+                                            </Link>
+                                        </div>
+                                        <div className="absolute bottom-3 left-3">
+                                            <span className={`text-[9px] font-bold px-2 py-1 rounded border shadow-sm ${STATUS_BADGE[product.moderation_status]}`}>
+                                                {STATUS_TABS.find(t => t.key === product.moderation_status)?.label || product.moderation_status}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Content Section */}
+                                    <div className="p-5 flex flex-col flex-1">
+                                        <div className="mb-1">
+                                            <span className="text-[10px] font-bold text-gray-400">ID #{product.id}</span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-gray-900 mb-4 line-clamp-2 h-12 leading-tight">
+                                            {product.title}
+                                        </h3>
+                                        
+                                        <div className="space-y-4 mb-6 flex-1">
+                                            <div className="flex justify-between items-end border-b border-gray-50 pb-3">
+                                                <div>
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Giá khởi điểm</p>
+                                                    <p className="text-sm font-bold text-[#002B5B]">{fmt(price)}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[9px] font-bold text-gray-400 uppercase mb-0.5">Người bán</p>
+                                                    <p className="text-xs font-bold text-gray-700 truncate max-w-[120px]">{product.seller_name}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="flex items-center gap-2 text-gray-400">
+                                                <User size={12} />
+                                                <span className="text-[10px] font-medium truncate italic">{product.seller_email}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Actions Row - Compact */}
+                                        <div className="pt-4 border-t border-gray-100 grid grid-cols-1 gap-2">
+                                            <button
+                                                disabled={actionLoading === product.id}
+                                                onClick={() => handleApprove(product.id, product.title)}
+                                                className="w-full py-2.5 bg-emerald-600 text-white text-[11px] font-bold rounded hover:bg-emerald-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                <CheckCircle size={14} /> Phê duyệt tin
+                                            </button>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    disabled={actionLoading === product.id}
+                                                    onClick={() => openReasonModal(product.id, product.title, 'request-edit')}
+                                                    className="py-2 bg-[#002B5B] text-white text-[11px] font-bold rounded hover:bg-[#001f40] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <Edit3 size={14} /> Sửa
+                                                </button>
+                                                <button
+                                                    disabled={actionLoading === product.id}
+                                                    onClick={() => openReasonModal(product.id, product.title, 'reject')}
+                                                    className="py-2 bg-white border border-gray-300 text-gray-600 text-[11px] font-bold rounded hover:bg-gray-50 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <XCircle size={14} /> Từ chối
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             <CustomModal
                 open={reasonModal.open}
-                title={reasonModal.action === 'reject' ? `Từ chối tin đăng` : `Yêu cầu chỉnh sửa`}
+                title={reasonModal.action === 'reject' ? `Lý do từ chối` : `Nội dung yêu cầu sửa`}
                 onClose={() => { setReasonModal({ open: false, productId: null, title: '', action: '' }); setReasonText(''); }}
             >
-                <div className="space-y-4">
-                    <div>
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Sản phẩm</p>
-                        <p className="text-sm font-bold text-gray-900">{reasonModal.title}</p>
-                    </div>
-                    
-                    <div>
-                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 block">
-                            {reasonModal.action === 'reject' ? 'Lý do từ chối' : 'Yêu cầu cụ thể'}
-                        </label>
-                        <textarea
-                            value={reasonText}
-                            onChange={(e) => setReasonText(e.target.value)}
-                            rows={4}
-                            placeholder={reasonModal.action === 'reject' ? 'VD: Hình ảnh không rõ nét, sai chuyên mục...' : 'VD: Cần bổ sung ảnh chụp mặt sau...'}
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all text-sm font-medium resize-none shadow-inner"
-                        />
-                    </div>
-
-                    <div className="flex gap-3 pt-2">
+                <div className="space-y-4 pt-4">
+                    <p className="text-sm font-bold text-gray-700">Sản phẩm: {reasonModal.title}</p>
+                    <textarea
+                        value={reasonText}
+                        onChange={(e) => setReasonText(e.target.value)}
+                        rows={5}
+                        placeholder="Nhập nội dung phản hồi cho người bán..."
+                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#002B5B] outline-none transition-all text-sm"
+                    />
+                    <div className="flex gap-3 pt-4">
                         <button
                             onClick={() => { setReasonModal({ open: false, productId: null, title: '', action: '' }); setReasonText(''); }}
-                            className="flex-1 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                            className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-sm rounded-lg hover:bg-gray-200"
                         >
-                            Hủy bỏ
+                            Hủy
                         </button>
                         <button
                             onClick={handleReasonConfirm}
                             disabled={!reasonText.trim() || actionLoading === reasonModal.productId}
-                            className={`flex-1 py-3 text-white font-bold rounded-xl transition shadow-lg disabled:opacity-50 ${
-                                reasonModal.action === 'reject' 
-                                    ? 'bg-red-600 hover:bg-red-700 shadow-red-600/20' 
-                                    : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+                            className={`flex-1 py-3 text-white font-bold text-sm rounded-lg transition ${
+                                reasonModal.action === 'reject' ? 'bg-red-600 hover:bg-red-700' : 'bg-[#002B5B] hover:bg-[#001f40]'
                             }`}
                         >
-                            {reasonModal.action === 'reject' ? 'Xác nhận từ chối' : 'Gửi yêu cầu'}
+                            Gửi phản hồi
                         </button>
                     </div>
                 </div>
             </CustomModal>
 
-            {/* Toast Notification */}
             {toast && (
-                <div className={`fixed bottom-8 right-8 z-[100] px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-right-10 duration-500 border flex items-center gap-3 ${
-                    toast.type === 'error' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-gray-900 border-gray-800 text-white'
+                <div className={`fixed bottom-10 right-10 z-[100] px-6 py-4 rounded-lg shadow-xl animate-in slide-in-from-right-10 duration-500 border ${
+                    toast.type === 'error' ? 'bg-white border-red-200 text-red-700' : 'bg-[#002B5B] border-[#002B5B] text-white'
                 }`}>
-                    {toast.type === 'error' && <AlertTriangle size={18} />}
                     <p className="text-sm font-bold">{toast.msg}</p>
                 </div>
             )}

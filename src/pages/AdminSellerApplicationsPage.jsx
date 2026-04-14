@@ -31,18 +31,18 @@ const AdminSellerApplicationsPage = () => {
     };
 
     const handleApprove = async (id) => {
-        const confirmed = await showConfirm('Xác nhận', 'Bạn có chắc muốn phê duyệt đơn này?');
+        const confirmed = await showConfirm('Xác nhận phê duyệt', 'Cấp quyền Người bán cho tài khoản này?');
         if (!confirmed) return;
         
         try {
             setActionLoading(id);
             const res = await approveApplication(id);
             if (res.success) {
-                showAlert('Thành công', 'Đã phê duyệt thành công!');
+                showAlert('Thành công', 'Đã phê duyệt!');
                 fetchApplications();
             }
         } catch (err) {
-            showAlert('Lỗi', err.message || 'Lỗi khi phê duyệt');
+            showAlert('Lỗi', err.message || 'Lỗi thao tác');
         } finally {
             setActionLoading(null);
         }
@@ -50,7 +50,7 @@ const AdminSellerApplicationsPage = () => {
 
     const handleReject = async (id) => {
         if (!rejectNote.trim()) {
-            showAlert('Cảnh báo', 'Vui lòng nhập lý do từ chối');
+            showAlert('Lỗi', 'Vui lòng nhập lý do từ chối.');
             return;
         }
 
@@ -58,194 +58,152 @@ const AdminSellerApplicationsPage = () => {
             setActionLoading(id);
             const res = await rejectApplication(id, rejectNote);
             if (res.success) {
-                showAlert('Thành công', 'Đã từ chối đơn');
+                showAlert('Đã từ chối', 'Đã lưu phản hồi.');
                 setRejectingId(null);
                 setRejectNote('');
                 fetchApplications();
             }
         } catch (err) {
-            showAlert('Lỗi', err.message || 'Lỗi khi từ chối');
+            showAlert('Lỗi', err.message || 'Lỗi thao tác');
         } finally {
             setActionLoading(null);
         }
     };
 
-    const getStatusBadge = (status) => {
-        const styles = {
-            PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-            APPROVED: 'bg-green-100 text-green-800 border-green-200',
-            REJECTED: 'bg-red-100 text-red-800 border-red-200'
+    const getStatusConfig = (status) => {
+        const configs = {
+            PENDING: { label: 'Chờ duyệt', color: 'bg-amber-100 text-amber-700 border-amber-200' },
+            APPROVED: { label: 'Đã duyệt', color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+            REJECTED: { label: 'Từ chối', color: 'bg-red-100 text-red-700 border-red-200' }
         };
-        const icons = {
-            PENDING: <Clock size={14} />,
-            APPROVED: <CheckCircle size={14} />,
-            REJECTED: <XCircle size={14} />
-        };
-        const labels = {
-            PENDING: 'Đang chờ',
-            APPROVED: 'Đã duyệt',
-            REJECTED: 'Đã từ chối'
-        };
-
-        return (
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${styles[status]}`}>
-                {icons[status]}
-                {labels[status]}
-            </span>
-        );
+        return configs[status] || configs.PENDING;
     };
 
     return (
-        <div className="min-h-[calc(100vh-64px)] py-8 px-4 sm:px-6 lg:px-8 bg-gray-50">
-            <div className="max-w-7xl mx-auto">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Quản lý đơn đăng ký người bán</h1>
-                    <p className="text-gray-600">Xem xét và phê duyệt các đơn đăng ký trở thành người bán</p>
+        <div className="bg-[#f0f2f5] min-h-full pb-20">
+            {/* Page Header */}
+            <div className="bg-white border-b border-gray-200 py-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-[#002B5B]">Duyệt đơn người bán</h1>
+                    <p className="text-gray-500 mt-1 text-sm">Xác thực yêu cầu nâng cấp tài khoản bán hàng.</p>
                 </div>
-
-                {/* Filter Tabs */}
-                <div className="bg-white rounded-xl border border-gray-200 mb-6">
-                    <div className="flex gap-2 p-2">
-                        {['PENDING', 'APPROVED', 'REJECTED'].map(status => (
-                            <button
-                                key={status}
-                                onClick={() => setFilter(status)}
-                                className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition ${
-                                    filter === status
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                                }`}
-                            >
-                                {status === 'PENDING' && 'Đang chờ'}
-                                {status === 'APPROVED' && 'Đã duyệt'}
-                                {status === 'REJECTED' && 'Đã từ chối'}
-                            </button>
-                        ))}
-                    </div>
+                
+                <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+                    {['PENDING', 'APPROVED', 'REJECTED'].map(status => (
+                        <button
+                            key={status}
+                            onClick={() => setFilter(status)}
+                            className={`px-4 py-2 rounded-md text-xs font-bold transition-all ${
+                                filter === status
+                                    ? 'bg-white text-[#002B5B] shadow-sm border border-gray-200'
+                                    : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                        >
+                            {status === 'PENDING' && 'Đang chờ'}
+                            {status === 'APPROVED' && 'Đã duyệt'}
+                            {status === 'REJECTED' && 'Từ chối'}
+                        </button>
+                    ))}
                 </div>
+            </div>
 
-                {/* Applications List */}
+            <div className="px-8 mt-8 max-w-[1400px] mx-auto">
                 {loading ? (
-                    <div className="flex justify-center py-12">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                    </div>
+                    <div className="py-20 text-center text-gray-400 text-sm">Đang tải hồ sơ...</div>
                 ) : applications.length === 0 ? (
-                    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                        <p className="text-gray-500">Không có đơn đăng ký nào</p>
+                    <div className="py-20 text-center bg-white rounded-lg border border-gray-200">
+                         <p className="text-gray-500 text-sm italic">Không có yêu cầu nào.</p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
-                        {applications.map(app => (
-                            <div key={app.id} className="bg-white rounded-xl border border-gray-200 p-6">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <h3 className="text-xl font-bold text-gray-900">{app.shop_name}</h3>
-                                            {getStatusBadge(app.status)}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {applications.map(app => {
+                            const config = getStatusConfig(app.status);
+                            return (
+                                <div key={app.id} className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden flex flex-col p-6 hover:border-blue-300 transition-all">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="bg-blue-50 p-3 rounded-lg text-[#002B5B]">
+                                            <Store size={24} />
                                         </div>
-                                        <p className="text-sm text-gray-500">
-                                            Đăng ký bởi: <span className="font-medium text-gray-700">{app.user_name}</span> ({app.user_email})
-                                        </p>
-                                        <p className="text-xs text-gray-400">
-                                            {new Date(app.created_at).toLocaleString('vi-VN')}
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <div className="flex items-start gap-2">
-                                        <Phone size={18} className="text-gray-400 mt-0.5" />
-                                        <div>
-                                            <p className="text-xs text-gray-500">Số điện thoại</p>
-                                            <p className="text-sm font-medium text-gray-900">{app.phone}</p>
-                                        </div>
+                                        <span className={`text-[10px] font-bold px-2 py-1 rounded border ${config.color}`}>
+                                            {config.label}
+                                        </span>
                                     </div>
 
-                                    {app.address && (
-                                        <div className="flex items-start gap-2">
-                                            <MapPin size={18} className="text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs text-gray-500">Địa chỉ</p>
-                                                <p className="text-sm font-medium text-gray-900">{app.address}</p>
+                                    <h3 className="text-lg font-bold text-gray-900 mb-1">{app.shop_name}</h3>
+                                    <div className="text-sm text-gray-500 mb-6 font-medium">
+                                        <p>{app.user_name}</p>
+                                        <p className="text-xs text-gray-400">{app.user_email}</p>
+                                    </div>
+
+                                    <div className="space-y-3 mb-6 flex-1">
+                                        <div className="flex items-center gap-3 text-sm text-gray-700">
+                                            <Phone size={14} className="text-gray-400" />
+                                            <span>{app.phone}</span>
+                                        </div>
+                                        {app.address && (
+                                            <div className="flex items-start gap-3 text-sm text-gray-700">
+                                                <MapPin size={14} className="text-gray-400 mt-0.5" />
+                                                <span className="line-clamp-2">{app.address}</span>
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {app.business_description && (
-                                    <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                                        <div className="flex items-start gap-2">
-                                            <FileText size={18} className="text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs text-gray-500 mb-1">Mô tả kinh doanh</p>
-                                                <p className="text-sm text-gray-700">{app.business_description}</p>
+                                        )}
+                                        {app.business_description && (
+                                            <div className="mt-4 p-3 bg-gray-50 rounded border border-gray-100 text-xs text-gray-600 leading-relaxed italic line-clamp-3">
+                                                "{app.business_description}"
                                             </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {app.admin_note && (
-                                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                                        <p className="text-xs text-red-600 font-semibold mb-1">Ghi chú từ Admin:</p>
-                                        <p className="text-sm text-red-800">{app.admin_note}</p>
-                                    </div>
-                                )}
-
-                                {/* Action Buttons */}
-                                {app.status === 'PENDING' && (
-                                    <div className="flex gap-3 pt-4 border-t border-gray-200">
-                                        {rejectingId === app.id ? (
-                                            <div className="flex-1">
-                                                <textarea
-                                                    value={rejectNote}
-                                                    onChange={(e) => setRejectNote(e.target.value)}
-                                                    placeholder="Nhập lý do từ chối..."
-                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-2 text-sm"
-                                                    rows="2"
-                                                />
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => handleReject(app.id)}
-                                                        disabled={actionLoading === app.id}
-                                                        className="flex-1 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50"
-                                                    >
-                                                        Xác nhận từ chối
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setRejectingId(null);
-                                                            setRejectNote('');
-                                                        }}
-                                                        className="px-4 bg-gray-200 text-gray-700 py-2 rounded-lg font-medium hover:bg-gray-300 transition"
-                                                    >
-                                                        Hủy
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <button
-                                                    onClick={() => handleApprove(app.id)}
-                                                    disabled={actionLoading === app.id}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition disabled:opacity-50"
-                                                >
-                                                    <CheckCircle size={18} />
-                                                    Phê duyệt
-                                                </button>
-                                                <button
-                                                    onClick={() => setRejectingId(app.id)}
-                                                    disabled={actionLoading === app.id}
-                                                    className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 transition disabled:opacity-50"
-                                                >
-                                                    <XCircle size={18} />
-                                                    Từ chối
-                                                </button>
-                                            </>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {app.status === 'PENDING' && (
+                                        <div className="pt-4 border-t border-gray-100">
+                                            {rejectingId === app.id ? (
+                                                <div className="space-y-3">
+                                                    <textarea
+                                                        value={rejectNote}
+                                                        onChange={(e) => setRejectNote(e.target.value)}
+                                                        placeholder="Lý do từ chối..."
+                                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm placeholder:italic"
+                                                        rows="2"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleReject(app.id)}
+                                                            className="flex-1 py-2 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition"
+                                                        >
+                                                            Gửi từ chối
+                                                        </button>
+                                                        <button
+                                                            onClick={() => setRejectingId(null)}
+                                                            className="px-4 py-2 bg-gray-100 text-gray-500 text-xs font-bold rounded"
+                                                        >
+                                                            Hủy
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        onClick={() => handleApprove(app.id)}
+                                                        className="flex-1 py-2 bg-[#002B5B] text-white text-xs font-bold rounded hover:bg-[#001f40] transition flex items-center justify-center gap-2"
+                                                    >
+                                                        <CheckCircle size={14} /> Duyệt hồ sơ
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setRejectingId(app.id)}
+                                                        className="px-4 py-2 border border-gray-300 text-gray-500 text-xs font-bold rounded hover:bg-gray-50 transition"
+                                                    >
+                                                        <XCircle size={14} />
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    <div className="mt-4 pt-4 border-t border-gray-50 text-[10px] text-gray-400 font-bold uppercase text-center">
+                                        Nộp ngày {new Date(app.created_at).toLocaleDateString('vi-VN')}
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>

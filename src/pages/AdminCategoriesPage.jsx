@@ -18,7 +18,6 @@ import { useModal } from '../context/ModalContext';
 import Modal from '../components/Modal';
 import CustomSelect from '../components/CustomSelect';
 
-/* ──────────────────── Page ──────────────────── */
 const AdminCategoriesPage = () => {
   const { showAlert, showConfirm } = useModal();
   const [categories, setCategories] = useState([]);
@@ -125,277 +124,194 @@ const AdminCategoriesPage = () => {
     }
   };
 
-  // Build hierarchical view: roots first, then their children
   const roots = categories.filter((c) => !c.parent_id);
   const children = categories.filter((c) => c.parent_id);
 
   return (
-    <div className="py-12 bg-gray-50/50 min-h-screen">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Quản lý danh mục</h1>
-            <p className="text-gray-500 mt-1">Cấu hình cây danh mục cho toàn bộ sàn đấu giá</p>
-          </div>
-          <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                <Folder size={20} />
-            </div>
+    <div className="bg-[#f0f2f5] min-h-full pb-20">
+      <div className="bg-white border-b border-gray-200 py-8 px-8">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-                <p className="text-xs text-gray-500 font-medium">Tổng số danh mục</p>
-                <p className="text-lg font-bold text-gray-900">{categories.length}</p>
+              <h1 className="text-2xl font-bold text-[#002B5B]">Quản lý Danh mục</h1>
+              <p className="text-gray-500 mt-1 text-sm">Cấu hình hệ thống phân loại sản phẩm trên sàn.</p>
+            </div>
+            
+            <div className="bg-[#002B5B] text-white px-6 py-3 rounded-lg flex items-center gap-3">
+              <Folder size={18} />
+              <span className="text-sm font-bold">{categories.length} danh mục</span>
             </div>
           </div>
-        </div>
-
-        {/* Add form */}
-        <div className="bg-white rounded-[24px] shadow-xl shadow-blue-900/5 ring-1 ring-gray-100 p-8">
-          <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Plus className="text-blue-600" size={20} /> Thêm danh mục mới
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-5">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 block">Tên danh mục</label>
-                <input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                    placeholder="VD: Điện thoại, Đồ cổ..."
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all font-medium"
-                />
-            </div>
-            <div className="md:col-span-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1 block">Danh mục cha</label>
-                <CustomSelect
-                    value={newParentId}
-                    onChange={setNewParentId}
-                    options={[
-                        { value: "", label: "Danh mục gốc" },
-                        ...roots.map((r) => ({ value: r.id, label: r.name }))
-                    ]}
-                />
-            </div>
-            <div className="md:col-span-3 flex items-end">
-                <button
-                    onClick={handleCreate}
-                    disabled={!newName.trim() || creating}
-                    className="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-600/20 transition-all disabled:opacity-50 disabled:grayscale flex items-center justify-center gap-2"
-                >
-                    {creating ? 'Đang tạo...' : 'Tạo mới'}
-                </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Category list */}
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          {loading ? (
-            <div className="p-10 text-center text-gray-400 text-sm">
-              Đang tải...
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="p-10 text-center text-gray-400 text-sm">
-              Chưa có danh mục nào
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-100">
-              {roots.map((root) => (
-                <div key={root.id} className="group transition-all">
-                  {/* Root category */}
-                  <div className="flex items-center gap-4 px-6 py-4 bg-white hover:bg-gray-50/50 transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
-                        <Folder size={20} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[17px] font-bold text-gray-900">
-                        {root.name}
-                      </p>
-                      <p className="text-xs text-gray-400 font-mono">slug/{root.slug}</p>
-                    </div>
-                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() =>
-                          setEditModal({
-                            open: true,
-                            id: root.id,
-                            name: root.name,
-                            parentId: "",
-                            originalName: root.name,
-                          })
-                        }
-                        className="p-2 text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
-                        title="Chỉnh sửa"
-                      >
-                        <Pencil size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteConfirm(root.id, root.name)}
-                        className="p-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition"
-                        title="Xóa"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Children of this root */}
-                  <div className="bg-gray-50/30">
-                    {children
-                        .filter((c) => c.parent_id === root.id)
-                        .map((child) => (
-                        <div
-                            key={child.id}
-                            className="flex items-center gap-4 px-6 py-3 pl-16 border-t border-gray-100 group/child transition-colors hover:bg-white"
-                        >
-                            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                <ChevronRight size={14} strokeWidth={3} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                            <p className="text-[15px] font-semibold text-gray-800">{child.name}</p>
-                            <p className="text-[10px] text-gray-400 font-mono tracking-tight uppercase">
-                                SLUG/{child.slug}
-                            </p>
-                            </div>
-                            <div className="flex gap-1.5 opacity-0 group-hover/child:opacity-100 transition-opacity">
-                            <button
-                                onClick={() =>
-                                setEditModal({
-                                    open: true,
-                                    id: child.id,
-                                    name: child.name,
-                                    parentId: String(child.parent_id),
-                                    originalName: child.name,
-                                })
-                                }
-                                className="p-1.5 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded-md transition"
-                            >
-                                <Pencil size={14} />
-                            </button>
-                            <button
-                                onClick={() => handleDeleteConfirm(child.id, child.name)}
-                                className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                            </div>
-                        </div>
-                        ))}
-                    </div>
-                </div>
-              ))}
-
-              {/* Orphan children (parent deleted) */}
-              {children
-                .filter((c) => !roots.find((r) => r.id === c.parent_id))
-                .map((child) => (
-                  <div
-                    key={child.id}
-                    className="flex items-center gap-3 px-4 py-2.5"
-                  >
-                    <FolderOpen
-                      size={14}
-                      className="text-gray-400 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700">{child.name}</p>
-                      <p className="text-xs text-gray-400">
-                        slug: {child.slug} • Con của: #{child.parent_id}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button
-                        onClick={() =>
-                          setEditModal({
-                            open: true,
-                            id: child.id,
-                            name: child.name,
-                            parentId: String(child.parent_id),
-                            originalName: child.name,
-                          })
-                        }
-                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200 rounded-lg hover:bg-amber-100 transition"
-                      >
-                        <Pencil size={12} /> Sửa
-                      </button>
-                      <button
-                        onClick={() => handleDeleteConfirm(child.id, child.name)}
-                        className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition"
-                      >
-                        <Trash2 size={12} /> Xóa
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Edit Modal */}
+      <div className="max-w-[1400px] mx-auto px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-4 lg:sticky lg:top-8 h-fit">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Plus size={18} className="text-[#002B5B]" />
+              Thêm danh mục
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Tên hiển thị</label>
+                  <input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleCreate()}
+                      placeholder="VD: Xe hơi, Laptop..."
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:border-[#002B5B] outline-none transition-all text-sm"
+                  />
+              </div>
+
+              <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Danh mục cha</label>
+                  <CustomSelect
+                      value={newParentId}
+                      onChange={setNewParentId}
+                      options={[
+                          { value: "", label: "Cấp cao nhất" },
+                          ...roots.map((r) => ({ value: r.id, label: r.name }))
+                      ]}
+                  />
+              </div>
+
+              <button
+                  onClick={handleCreate}
+                  disabled={!newName.trim() || creating}
+                  className="w-full py-3 bg-[#002B5B] text-white font-bold text-sm rounded-lg hover:bg-[#001f40] transition-all disabled:opacity-50 mt-2"
+              >
+                  {creating ? 'Đang xử lý...' : 'Xác nhận thêm'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-8">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden min-h-[500px]">
+            {loading ? (
+              <div className="py-20 text-center text-gray-400 text-sm">Đang tải dữ liệu...</div>
+            ) : categories.length === 0 ? (
+              <div className="py-20 text-center">
+                 <p className="text-gray-500 text-sm">Chưa có danh mục nào được tạo.</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {roots.map((root) => (
+                  <div key={root.id} className="group transition-all">
+                    <div className="flex items-center gap-4 px-6 py-5 bg-white hover:bg-gray-50 transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 text-[#002B5B] flex items-center justify-center border border-blue-100 shrink-0">
+                          <Folder size={18} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-bold text-gray-900 leading-tight">{root.name}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">SLUG: {root.slug}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() =>
+                            setEditModal({
+                              open: true, id: root.id, name: root.name, parentId: "", originalName: root.name
+                            })
+                          }
+                          className="p-2 text-gray-400 hover:text-[#002B5B] hover:bg-blue-50 rounded-lg transition"
+                          title="Sửa"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteConfirm(root.id, root.name)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          title="Xóa"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50/50">
+                      {children
+                          .filter((c) => c.parent_id === root.id)
+                          .map((child) => (
+                          <div
+                              key={child.id}
+                              className="flex items-center gap-4 px-6 py-3 pl-16 border-t border-gray-100 transition-colors hover:bg-white"
+                          >
+                              <div className="w-6 h-6 rounded bg-gray-100 flex items-center justify-center text-gray-400">
+                                  <ChevronRight size={12} strokeWidth={3} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-700">{child.name}</p>
+                                <p className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">ID: {child.id}</p>
+                              </div>
+                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                  onClick={() =>
+                                  setEditModal({
+                                      open: true, id: child.id, name: child.name, parentId: String(child.parent_id), originalName: child.name,
+                                  })
+                                  }
+                                  className="p-1.5 text-gray-400 hover:text-[#002B5B] transition"
+                              >
+                                  <Pencil size={14} />
+                              </button>
+                              <button
+                                  onClick={() => handleDeleteConfirm(child.id, child.name)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 transition"
+                              >
+                                  <Trash2 size={14} />
+                              </button>
+                              </div>
+                          </div>
+                          ))}
+                      </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <Modal
         open={editModal.open}
-        title={`Chỉnh sửa: "${editModal.originalName}"`}
-        onClose={() =>
-          setEditModal({
-            open: false,
-            id: null,
-            name: "",
-            parentId: "",
-            originalName: "",
-          })
-        }
+        title={`Chỉnh sửa danh mục`}
+        onClose={() => setEditModal({ open: false, id: null, name: "", parentId: "", originalName: "" })}
       >
-        <div className="space-y-3">
+        <div className="space-y-4 pt-4">
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">
-              Tên danh mục
-            </label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Tên danh mục</label>
             <input
               value={editModal.name}
-              onChange={(e) =>
-                setEditModal((p) => ({ ...p, name: e.target.value }))
-              }
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
+              onChange={(e) => setEditModal((p) => ({ ...p, name: e.target.value }))}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:border-[#002B5B] outline-none transition-all text-sm"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-600 mb-1 block">
-              Danh mục cha
-            </label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 block">Danh mục cha</label>
             <CustomSelect
               value={editModal.parentId}
-              onChange={(val) =>
-                setEditModal((p) => ({ ...p, parentId: val }))
-              }
+              onChange={(val) => setEditModal((p) => ({ ...p, parentId: val }))}
               options={[
-                { value: "", label: "Danh mục gốc" },
+                { value: "", label: "Cấp cao nhất" },
                 ...roots
                   .filter((r) => r.id !== editModal.id)
                   .map((r) => ({ value: r.id, label: r.name }))
               ]}
-              placeholder="Danh mục gốc"
             />
           </div>
-          <div className="flex gap-2 justify-end pt-1">
+          <div className="flex gap-3 pt-4">
             <button
-              onClick={() =>
-                setEditModal({
-                  open: false,
-                  id: null,
-                  name: "",
-                  parentId: "",
-                  originalName: "",
-                })
-              }
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
+              onClick={() => setEditModal({ open: false, id: null, name: "", parentId: "", originalName: "" })}
+              className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-sm rounded-lg hover:bg-gray-200 transition"
             >
               Hủy
             </button>
             <button
               onClick={handleEditConfirm}
               disabled={!editModal.name.trim() || actionLoading}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+              className="flex-1 py-3 bg-[#002B5B] text-white font-bold text-sm rounded-lg hover:bg-[#001f40] transition shadow-lg shadow-gray-200 disabled:opacity-50"
             >
               Lưu thay đổi
             </button>
@@ -403,12 +319,11 @@ const AdminCategoriesPage = () => {
         </div>
       </Modal>
 
-      {/* Toast Notification */}
       {toast && (
-        <div className={`fixed bottom-8 right-8 z-[100] px-6 py-3 rounded-2xl shadow-2xl animate-in slide-in-from-right-10 duration-500 border flex items-center gap-3 ${
-          toast.type === 'error' ? 'bg-red-50 border-red-100 text-red-700' : 'bg-gray-900 border-gray-800 text-white'
+        <div className={`fixed bottom-10 right-10 z-[100] px-6 py-4 rounded-lg shadow-xl animate-in slide-in-from-right-10 duration-500 flex items-center gap-3 border ${
+          toast.type === 'error' ? 'bg-white border-red-200 text-red-700' : 'bg-[#002B5B] border-[#002B5B] text-white'
         }`}>
-          {toast.type === 'error' && <AlertTriangle size={18} />}
+          {toast.type === 'error' ? <AlertTriangle size={18} /> : <FolderOpen size={18} />}
           <p className="text-sm font-bold">{toast.msg}</p>
         </div>
       )}

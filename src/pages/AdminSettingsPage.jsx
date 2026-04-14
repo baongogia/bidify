@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getAdminLogs, getAdminSettings, updateAdminSetting } from '../services/adminService';
-import { Settings2, X, Clock, ChevronRight } from 'lucide-react';
+import { Settings2, X, Clock, ChevronRight, Activity, Save } from 'lucide-react';
 
 /* ──────────────────── Modal ──────────────────── */
 const Modal = ({ open, title, children, onClose }) => {
     if (!open) return null;
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                    <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 text-gray-400">
+            <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+            <div className="relative bg-white rounded-lg shadow-2xl w-full max-w-md p-6 z-10 border border-gray-200">
+                <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-100">
+                    <h3 className="text-lg font-bold text-[#002B5B]">{title}</h3>
+                    <button onClick={onClose} className="p-1 rounded hover:bg-gray-100 text-gray-400">
                         <X size={18} />
                     </button>
                 </div>
@@ -42,160 +42,140 @@ const AdminSettingsPage = () => {
             setLoading(true);
             const [settingsRes, logsRes] = await Promise.all([
                 getAdminSettings(),
-                getAdminLogs({ target_type: 'SETTING', limit: 50 })
+                getAdminLogs({ target_type: 'SETTING', limit: 30 })
             ]);
             if (settingsRes.success) setSettings(settingsRes.data);
             if (logsRes.success) setLogs(logsRes.data);
         } catch (err) {
-            showToast(err.message || 'Không tải được thông tin hệ thống', 'error');
+            showToast(err.message || 'Không tải được cấu hình', 'error');
         } finally {
             setLoading(false);
         }
-    };
-
-    const openEdit = (item) => {
-        setEditModal({ open: true, key: item.setting_key, value: item.setting_value || '', description: item.description || '' });
     };
 
     const handleSave = async () => {
         if (!editModal.key) return;
         setSaving(true);
         try {
-            await updateAdminSetting(editModal.key, editModal.value, editModal.description || 'Cập nhật từ trang thiết lập');
-            showToast(`Đã cập nhật cài đặt "${editModal.key}"`);
+            await updateAdminSetting(editModal.key, editModal.value, editModal.description || 'Hệ thống');
+            showToast(`Đã lưu thiết lập "${editModal.key}"`);
             setEditModal({ open: false, key: '', value: '', description: '' });
             await fetchData();
         } catch (err) {
-            showToast(err.message || 'Không cập nhật được cài đặt', 'error');
+            showToast(err.message || 'Lỗi lưu dữ liệu', 'error');
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <div className="py-8 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto space-y-6">
-                {/* Header */}
+        <div className="bg-[#f0f2f5] min-h-full pb-20">
+            {/* Page Header */}
+            <div className="bg-white border-b border-gray-200 py-8 px-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Thiết lập hệ thống</h1>
-                    <p className="text-sm text-gray-500 mt-1">
-                        Quản lý bước giá mặc định, quy tắc hệ thống và các tham số cấu hình
-                    </p>
-                </div>
-
-                {/* Settings list */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <Settings2 size={16} />
-                            Các tham số cấu hình
-                        </div>
-                    </div>
-
-                    {loading ? (
-                        <div className="p-10 text-center text-gray-400 text-sm">Đang tải...</div>
-                    ) : settings.length === 0 ? (
-                        <div className="p-10 text-center text-gray-400 text-sm">Chưa có cài đặt nào</div>
-                    ) : (
-                        <div className="divide-y divide-gray-100">
-                            {settings.map((item) => (
-                                <div key={item.setting_key} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-semibold text-gray-800 font-mono">{item.setting_key}</p>
-                                        {item.description && (
-                                            <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
-                                        )}
-                                        <p className="text-sm text-blue-700 font-medium mt-1">{item.setting_value}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => openEdit(item)}
-                                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 rounded-lg hover:bg-blue-100 transition flex-shrink-0"
-                                    >
-                                        <ChevronRight size={13} />
-                                        Sửa
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Action log */}
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    <div className="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                            <Clock size={16} />
-                            Nhật ký thay đổi cài đặt
-                        </div>
-                    </div>
-                    {logs.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400 text-sm">Chưa có lịch sử thay đổi</div>
-                    ) : (
-                        <div className="divide-y divide-gray-100 max-h-80 overflow-y-auto">
-                            {logs.map((log) => (
-                                <div key={log.id} className="flex items-start gap-3 px-5 py-3">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-2 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-800">{log.action_type}</p>
-                                        <p className="text-xs text-gray-500">
-                                            {log.admin_name} • {new Date(log.created_at).toLocaleString('vi-VN')}
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <h1 className="text-2xl font-bold text-[#002B5B]">Thiết lập hệ thống</h1>
+                    <p className="text-gray-500 mt-1 text-sm">Cấu hình tham số vận hành sàn đấu giá.</p>
                 </div>
             </div>
 
-            {/* Edit Modal */}
-            <Modal
-                open={editModal.open}
-                title={`Cập nhật: ${editModal.key}`}
-                onClose={() => setEditModal({ open: false, key: '', value: '', description: '' })}
-            >
-                <div className="space-y-3">
+            <div className="px-8 mt-8 max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Settings Table */}
+                <div className="lg:col-span-8">
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+                             <Settings2 size={16} className="text-[#002B5B]" />
+                             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tham số cấu hình</span>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="py-20 text-center text-gray-400 text-sm">Đang tải...</div>
+                        ) : (
+                            <div className="divide-y divide-gray-100">
+                                {settings.map((item) => (
+                                    <div key={item.setting_key} className="p-6 hover:bg-gray-50/50 transition-colors flex items-start gap-6">
+                                        <div className="p-3 bg-blue-50 text-[#002B5B] rounded-lg shrink-0 border border-blue-100 italic">
+                                            <Settings2 size={20} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <p className="text-xs font-bold text-blue-600 mb-1">{item.setting_key}</p>
+                                                    <h4 className="text-base font-bold text-gray-900">{item.description || 'Cấu hình hệ thống'}</h4>
+                                                </div>
+                                                <button 
+                                                    onClick={() => setEditModal({ open: true, key: item.setting_key, value: item.setting_value || '', description: item.description || '' })}
+                                                    className="px-4 py-2 bg-[#002B5B] text-white text-[10px] font-bold uppercase rounded shadow hover:bg-[#001f40] transition"
+                                                >
+                                                    Thay đổi
+                                                </button>
+                                            </div>
+                                            <div className="bg-gray-50 px-4 py-3 rounded border border-gray-100">
+                                                <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">Giá trị:</p>
+                                                <code className="text-sm font-bold text-gray-700 font-mono break-all">{item.setting_value}</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Activity Logs */}
+                <div className="lg:col-span-4 italic">
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden sticky top-8">
+                        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+                             <Activity size={16} className="text-[#002B5B]" />
+                             <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lịch sử thay đổi</span>
+                        </div>
+                        <div className="max-h-[600px] overflow-y-auto divide-y divide-gray-100">
+                            {logs.length === 0 ? (
+                                <div className="p-10 text-center text-gray-400 text-xs">Trống</div>
+                            ) : (
+                                logs.map((log) => (
+                                    <div key={log.id} className="p-4 hover:bg-gray-50 transition-colors">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <p className="text-xs font-bold text-gray-800 not-italic">{log.action_type}</p>
+                                            <span className="text-[9px] text-gray-400 font-bold">{new Date(log.created_at).toLocaleDateString('vi-VN')}</span>
+                                        </div>
+                                        <p className="text-[11px] text-gray-500 leading-relaxed mb-2 line-clamp-2">"{log.action_detail}"</p>
+                                        <div className="flex items-center gap-1">
+                                            <span className="text-[9px] bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-bold uppercase not-italic">{log.admin_name}</span>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <Modal open={editModal.open} title="Cập nhật tham số" onClose={() => setEditModal({ open: false, key: '', value: '', description: '' })}>
+                <div className="space-y-4 pt-4">
+                    <p className="text-sm font-bold text-[#002B5B] uppercase tracking-wide">{editModal.key}</p>
                     <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Giá trị mới</label>
-                        <textarea
+                        <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Giá trị mới</label>
+                        <textarea 
                             value={editModal.value}
-                            onChange={(e) => setEditModal((p) => ({ ...p, value: e.target.value }))}
+                            onChange={(e) => setEditModal(p => ({ ...p, value: e.target.value }))}
                             rows={4}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 font-mono resize-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded focus:border-[#002B5B] outline-none transition-all text-sm font-mono font-bold"
                         />
                     </div>
-                    <div>
-                        <label className="text-xs font-medium text-gray-600 mb-1 block">Mô tả (tùy chọn)</label>
-                        <input
-                            value={editModal.description}
-                            onChange={(e) => setEditModal((p) => ({ ...p, description: e.target.value }))}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300"
-                        />
-                    </div>
-                    <div className="flex gap-2 justify-end pt-1">
-                        <button
-                            onClick={() => setEditModal({ open: false, key: '', value: '', description: '' })}
-                            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition"
-                        >
-                            Hủy
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={saving}
-                            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
-                        >
-                            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+                    <div className="flex gap-3 pt-4">
+                        <button onClick={() => setEditModal({ open: false, key: '', value: '', description: '' })} className="flex-1 py-3 bg-gray-100 text-gray-600 font-bold text-sm rounded">Hủy</button>
+                        <button onClick={handleSave} disabled={saving} className="flex-1 py-3 bg-[#002B5B] text-white font-bold text-sm rounded hover:bg-[#001f40] flex items-center justify-center gap-2">
+                            <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu cài đặt'}
                         </button>
                     </div>
                 </div>
             </Modal>
 
-            {/* Toast */}
             {toast && (
-                <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
-                    toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-gray-900 text-white'
+                <div className={`fixed bottom-10 right-10 z-[100] px-6 py-4 rounded-lg shadow-xl animate-in slide-in-from-right-10 duration-500 border ${
+                    toast.type === 'error' ? 'bg-white border-red-200 text-red-700' : 'bg-[#002B5B] border-[#002B5B] text-white'
                 }`}>
-                    {toast.msg}
+                    <p className="text-sm font-bold">{toast.msg}</p>
                 </div>
             )}
         </div>

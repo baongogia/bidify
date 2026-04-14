@@ -8,6 +8,7 @@ import PrivateRoute from './components/PrivateRoute';
 import { AuthProvider } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminModerationPage from './pages/AdminModerationPage';
 import AdminSellerApplicationsPage from './pages/AdminSellerApplicationsPage';
 import AdminSettingsPage from './pages/AdminSettingsPage';
@@ -91,6 +92,14 @@ const App = () => {
 							<PrivateRoute>
 								<SellerProductsPage />
 							</PrivateRoute>
+						)}
+					/>
+					<Route
+						path="/admin"
+						element={(
+							<AdminRoute>
+								<AdminLayout><AdminDashboardPage /></AdminLayout>
+							</AdminRoute>
 						)}
 					/>
 					<Route
