@@ -88,16 +88,16 @@ const Navbar = () => {
                                     value={keyword}
                                     onChange={(e) => setKeyword(e.target.value)}
                                     onFocus={() => setIsSearchFocused(true)}
-                                    className="w-full pl-11 pr-16 py-2.5 bg-gray-100/80 border border-transparent rounded-full focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium placeholder-gray-500 text-gray-900"
+                                    className="w-full pl-11 pr-16 py-2.5 bg-gray-100/80 border border-transparent rounded-lg focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all text-sm font-medium placeholder-gray-500 text-gray-900"
                                 />
-                                <button type="submit" className="absolute right-1 top-1 bottom-1 px-4 bg-blue-600 rounded-full text-white cursor-pointer hover:bg-blue-700 hover:shadow-md transition-all text-sm font-semibold">
+                                <button type="submit" className="absolute right-1 top-1 bottom-1 px-4 bg-blue-600 rounded-lg text-white cursor-pointer hover:bg-blue-700 hover:shadow-md transition-all text-sm font-semibold">
                                     Tìm
                                 </button>
                             </form>
 
                             {/* Dropdown Results */}
                             {isSearchFocused && keyword.trim() && (
-                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 transition-all duration-200">
+                                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden z-50 transition-all duration-200">
                                     {isSearching ? (
                                         <div className="p-4 text-center text-sm text-gray-500 flex items-center justify-center gap-2">
                                             <div className="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
@@ -154,7 +154,7 @@ const Navbar = () => {
                                 {isSeller && (
                                     <Link 
                                         to="/create-product" 
-                                        className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition font-medium text-sm"
+                                        className="hidden sm:flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition font-medium text-sm"
                                     >
                                         <Plus size={18} />
                                         Đăng bán
@@ -174,7 +174,7 @@ const Navbar = () => {
                                 {isBuyer && !isPendingSeller && (
                                     <Link 
                                         to="/apply-seller" 
-                                        className="hidden sm:flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-full hover:bg-green-700 transition font-medium text-sm"
+                                        className="hidden sm:flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition font-medium text-sm"
                                     >
                                         <ShieldCheck size={18} />
                                         Đăng ký người bán
@@ -185,24 +185,24 @@ const Navbar = () => {
                                 {isAdmin && (
                                     <Link 
                                         to="/admin/seller-applications" 
-                                        className="hidden sm:flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition font-medium text-sm"
+                                        className="hidden sm:flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition font-medium text-sm"
                                     >
                                         <ShieldCheck size={18} />
                                         Admin
                                     </Link>
                                 )}
 
-                                <Link to="/notifications" className="text-gray-500 hover:text-blue-600 transition p-2 rounded-full hover:bg-gray-100 hidden sm:block">
+                                <Link to="/notifications" className="text-gray-500 hover:text-blue-600 transition p-2 rounded-lg hover:bg-gray-100 hidden sm:block">
                                     <Bell size={20} />
                                 </Link>
-                                <div className="flex items-center gap-3 relative group cursor-pointer p-1.5 pr-3 rounded-full hover:bg-gray-100 transition border border-transparent hover:border-gray-200">
+                                <div className="flex items-center gap-3 relative group cursor-pointer p-1.5 pr-3 rounded-lg hover:bg-gray-100 transition border border-transparent hover:border-gray-200">
                                     <div className="w-8 h-8 flex items-center justify-center bg-gradient-to-tr from-blue-600 to-indigo-600 text-white rounded-full font-bold shadow-sm">
                                         {user?.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <span className="text-sm font-semibold text-gray-700 hidden sm:block tracking-tight">Xin chào, {user?.name?.split(' ')[0]}</span>
                                     
                                     {/* Dropdown menu */}
-                                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-100 rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden">
+                                    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-100 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0 z-50 overflow-hidden">
                                         <div className="p-2">
                                             {/* Mobile: Show create product for sellers */}
                                             {isSeller && (
@@ -257,7 +257,7 @@ const Navbar = () => {
                         ) : (
                             <div className="text-sm font-medium flex items-center gap-2">
                                 <Link to="/login" className="px-4 py-2 text-gray-600 hover:text-blue-600 transition font-bold">Đăng nhập</Link>
-                                <Link to="/register" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-full shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-bold">Đăng ký</Link>
+                                <Link to="/register" className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all font-bold">Đăng ký</Link>
                             </div>
                         )}
                     </div>

@@ -8,7 +8,7 @@ import useAuctionSocket from '../hooks/useAuctionSocket';
 import SkeletonDetail from '../components/SkeletonDetail';
 import CountdownTimer from '../components/CountdownTimer';
 import BidHistoryModal from '../components/BidHistoryModal';
-import { Heart, Tag, User, ShieldCheck, Clock, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Heart, Tag, User, ShieldCheck, Clock, ChevronRight, Minus, Plus, Trophy, PartyPopper } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
 
 const ProductDetailPage = () => {
@@ -26,6 +26,7 @@ const ProductDetailPage = () => {
     const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
     const [latestBid, setLatestBid] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -82,6 +83,18 @@ const ProductDetailPage = () => {
                 highest_bidder_id: data.winner_id,
                 highest_bidder_name: data.winner_name
             } : prev);
+            
+            if (data.status === 'UNSOLD') {
+                showAlert('Đã kết thúc', 'Phiên đấu giá đã khép lại mà không có người trả giá.');
+            } else if (user && data.winner_id === user.id) {
+                setShowConfetti(true);
+                // Success modal with premium styling
+                setTimeout(() => {
+                    showAlert('Chúc mừng chiến thắng!', 'Bạn đã xuất sắc giành chiến thắng trong phiên đấu giá này! Vui lòng tiến hành thanh toán để nhận hàng.');
+                }, 500);
+            } else {
+                showAlert('Đã kết thúc', `Phiên đấu giá đã khép lại. Người chiến thắng là ${data.winner_name || 'Người dùng ẩn danh'}.`);
+            }
         }
     );
 
@@ -146,6 +159,7 @@ const ProductDetailPage = () => {
     if (!product) return null;
 
     const isEnded = product.status !== 'ACTIVE' || new Date(product.end_time) <= currentTime;
+    const isNotStarted = product.status === 'ACTIVE' && new Date(product.start_time) > currentTime;
     const minBid = Number(product.min_valid_bid) || (Number(product.current_price) + 10000);
     const bidStep = Math.max(minBid - Number(product.current_price), 10000);
 
@@ -237,9 +251,14 @@ const ProductDetailPage = () => {
                             <div className="mt-4 flex items-center justify-between text-sm py-3 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
                                 <div className="flex items-center gap-2">
                                     <Clock size={16} className={isEnded ? 'text-gray-500' : 'text-blue-600'} />
-                                    <span className="font-semibold text-gray-700">Thời gian còn lại:</span>
+                                    <span className="font-semibold text-gray-700">
+                                        {isNotStarted ? 'Sẽ bắt đầu sau:' : 'Thời gian còn lại:'}
+                                    </span>
                                 </div>
-                                <CountdownTimer endTime={product.end_time} />
+                                <CountdownTimer 
+                                    endTime={isNotStarted ? product.start_time : product.end_time} 
+                                    forcedEnd={isEnded}
+                                />
                             </div>
 
                             <button 
@@ -252,7 +271,15 @@ const ProductDetailPage = () => {
 
                         {/* Bidding Box */}
                         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6 shadow-sm mb-6">
-                            {isEnded ? (
+                            {isNotStarted ? (
+                                <div className="text-center py-4">
+                                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3 text-blue-600">
+                                        <Clock size={24} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900">Phiên đấu giá chưa bắt đầu</h3>
+                                    <p className="text-gray-500 mt-1 mb-4">Sản phẩm này sẽ nhận đặt giá vào lúc: <br /> <strong className="text-blue-700">{new Date(product.start_time).toLocaleString('vi-VN')}</strong></p>
+                                </div>
+                            ) : isEnded ? (
                                 <div className="text-center py-4">
                                     <div className="inline-flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full mb-3 text-gray-500">
                                         <ShieldCheck size={24} />
@@ -262,7 +289,7 @@ const ProductDetailPage = () => {
                                     {['ENDED_WAITING_PAYMENT', 'COMPLETED'].includes(product.status) && (
                                         user?.id === product.highest_bidder_id ? (
                                             <div className="bg-green-50 border border-green-200 p-4 rounded-xl text-left">
-                                                <h4 className="text-green-800 font-bold mb-2">🎉 Xin chúc mừng! Bạn đã thắng phiên đấu giá này!</h4>
+                                                <h4 className="text-green-800 font-bold mb-2">Xin chúc mừng! Bạn đã thắng phiên đấu giá này!</h4>
                                                 
                                                 {product.status === 'ENDED_WAITING_PAYMENT' ? (
                                                     <>
@@ -362,6 +389,75 @@ const ProductDetailPage = () => {
                 totalBids={product.total_bids}
                 latestBid={latestBid}
             />
+
+            {/* Premium Celebration Overlay */}
+            {showConfetti && (
+                <div 
+                    className="fixed inset-0 z-[100] pointer-events-none flex items-center justify-center overflow-hidden"
+                    onClick={() => setShowConfetti(false)}
+                >
+                    <div className="absolute inset-0 bg-blue-600/10 backdrop-blur-[2px] animate-in fade-in duration-1000"></div>
+                    
+                    {/* CSS Confetti Particles */}
+                    <div className="confetti-container">
+                        {[...Array(50)].map((_, i) => (
+                            <div 
+                                key={i} 
+                                className={`confetti-particle particle-${i % 5}`}
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    animationDelay: `${Math.random() * 3}s`,
+                                    animationDuration: `${2 + Math.random() * 2}s`,
+                                    backgroundColor: ['#3B82F6', '#F59E0B', '#EF4444', '#10B981', '#8B5CF6'][i % 5]
+                                }}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="relative pointer-events-auto bg-white/90 backdrop-blur-xl p-10 rounded-[40px] shadow-2xl border border-white/50 flex flex-col items-center text-center max-w-sm mx-4 animate-in zoom-in-50 slide-in-from-bottom-20 duration-700">
+                        <div className="w-24 h-24 bg-gradient-to-tr from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-orange-500/30 animate-bounce">
+                            <Trophy size={48} className="text-white" />
+                        </div>
+                        <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight uppercase">Chiến Thắng!</h2>
+                        <p className="text-gray-600 font-medium mb-8">Xin chúc mừng, bạn là người trả giá cao nhất cho sản phẩm này.</p>
+                        <button 
+                            onClick={() => {
+                                setShowConfetti(false);
+                                navigate(`/checkout/${product.id}`);
+                            }}
+                            className="bg-gray-900 text-white px-10 py-4 rounded-2xl font-black hover:bg-black transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center gap-2"
+                        >
+                            Thanh toán ngay <PartyPopper size={20} />
+                        </button>
+                    </div>
+                    
+                    <style dangerouslySetInnerHTML={{ __html: `
+                        .confetti-container {
+                            position: absolute;
+                            top: -20px;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                        }
+                        .confetti-particle {
+                            position: absolute;
+                            width: 10px;
+                            height: 10px;
+                            border-radius: 2px;
+                            top: -10px;
+                            animation: fall linear forwards;
+                        }
+                        @keyframes fall {
+                            to {
+                                transform: translateY(110vh) rotate(720deg);
+                            }
+                        }
+                        .particle-0 { width: 8px; height: 12px; }
+                        .particle-1 { width: 12px; height: 8px; border-radius: 50%; }
+                        .particle-2 { width: 10px; height: 10px; transform: rotate(45deg); }
+                    `}} />
+                </div>
+            )}
         </div>
     );
 };

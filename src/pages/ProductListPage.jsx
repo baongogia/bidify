@@ -27,14 +27,14 @@ const CustomSelect = ({ value, onChange, options, minWidth = '150px' }) => {
             <button 
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
-                className="w-full flex items-center justify-between border border-gray-200 rounded-xl text-sm bg-gray-50 px-3 py-2.5 outline-none hover:bg-gray-100 transition focus:ring-2 focus:ring-blue-500"
+                className="w-full flex items-center justify-between border border-gray-200 rounded-lg text-sm bg-gray-50 px-3 py-2.5 outline-none hover:bg-gray-100 transition focus:ring-2 focus:ring-blue-500"
             >
                 <span className="truncate mr-2">{selectedOption?.label}</span>
                 <ChevronDown size={16} className={`text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
             </button>
             
             {isOpen && (
-                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-100 rounded-xl shadow-lg shadow-gray-200/50 z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="absolute top-full left-0 mt-1 w-full bg-white border border-gray-100 rounded-lg shadow-lg shadow-gray-200/50 z-50 overflow-hidden py-1 animate-in fade-in slide-in-from-top-2 duration-200">
                     {options.map(o => (
                         <button
                             key={o.value}
@@ -136,12 +136,12 @@ const ProductListPage = () => {
 
     // Components to render filters horizontally
     const renderFilters = () => (
-        <div className="bg-white p-3 rounded-2xl border border-gray-200 shadow-sm mb-8 inline-flex flex-col md:flex-row items-center gap-4">
-            <div className="flex items-center gap-2 text-sm font-medium text-gray-500 pl-2">
-                <Filter size={16} /> Lọc:
+        <div className="bg-white p-2 rounded-lg border border-gray-100 shadow-xl shadow-gray-200/20 mb-8 flex flex-col lg:flex-row items-center gap-2 w-full lg:w-max">
+            <div className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest pl-4 pr-2">
+                <Filter size={14} strokeWidth={3} /> Lọc kết quả
             </div>
             
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 p-1 bg-gray-50/50 rounded-lg w-full lg:w-auto">
                 <CustomSelect 
                     value={filter.category_id}
                     onChange={(val) => handleFilterChange({ target: { name: 'category_id', value: val } })}
@@ -149,30 +149,32 @@ const ProductListPage = () => {
                         { value: '', label: 'Tất cả danh mục' },
                         ...categories.map(c => ({ value: String(c.id), label: c.name }))
                     ]}
-                    minWidth="160px"
+                    minWidth="180px"
                 />
 
                 <CustomSelect 
                     value={filter.condition}
                     onChange={(val) => handleFilterChange({ target: { name: 'condition', value: val } })}
                     options={[
-                        { value: '', label: 'Mọi tình trạng' },
+                        { value: '', label: 'Tình trạng' },
                         { value: 'NEW', label: 'Hàng Mới' },
-                        { value: 'USED', label: 'Đã qua sử dụng' }
+                        { value: 'USED', label: 'Hàng Cũ' }
                     ]}
-                    minWidth="150px"
+                    minWidth="140px"
                 />
+
+                <div className="h-6 w-[1px] bg-gray-200 mx-1 hidden lg:block"></div>
 
                 <CustomSelect 
                     value={filter.sort}
                     onChange={(val) => handleFilterChange({ target: { name: 'sort', value: val } })}
                     options={[
-                        { value: 'ending_soon', label: 'Sắp kết thúc' },
-                        { value: 'newly_listed', label: 'Mới đăng' },
-                        { value: 'price_asc', label: 'Giá: Thấp đến cao' },
-                        { value: 'price_desc', label: 'Giá: Cao đến thấp' }
+                        { value: 'ending_soon', label: 'Kết thúc sớm nhất' },
+                        { value: 'newly_listed', label: 'Sản phẩm mới nhất' },
+                        { value: 'price_asc', label: 'Giá thấp nhất' },
+                        { value: 'price_desc', label: 'Giá cao nhất' }
                     ]}
-                    minWidth="170px"
+                    minWidth="190px"
                 />
             </div>
         </div>
@@ -191,18 +193,23 @@ const ProductListPage = () => {
                         </div>
 
                         <div className="max-w-4xl mx-auto text-center relative z-10">
-                            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 leading-tight">
-                                Khám phá & Sở hữu <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-cyan-300">Sản phẩm Tuyệt vời</span>
+                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-black uppercase tracking-widest mb-8 animate-in fade-in slide-in-from-bottom-4">
+                                <Zap size={14} className="text-yellow-400" /> Sàn đấu giá trực tuyến số 1 Việt Nam
+                            </div>
+                            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 leading-[0.9] animate-in fade-in slide-in-from-bottom-8 duration-700">
+                                KHÁM PHÁ & SỞ HỮU <br/>
+                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 via-white to-cyan-300">GIA SẢN ĐỘC BẢN</span>
                             </h1>
-                            <p className="text-lg md:text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
-                                Nền tảng đấu giá trực tuyến an toàn, minh bạch. Trao đổi những món đồ giá trị cao với mức giá do chính bạn quyết định.
+                            <p className="text-xl text-blue-100/80 mb-12 max-w-2xl mx-auto leading-relaxed font-medium animate-in fade-in slide-in-from-bottom-12 duration-1000">
+                                Trải nghiệm đấu giá thời gian thực với hệ thống bảo mật tuyệt đối. 
+                                Nơi những giá trị thực được khẳng định bởi chính bạn.
                             </p>
                             
-                            <div className="flex flex-col sm:flex-row justify-center gap-4">
-                                <button onClick={() => window.scrollTo({ top: 600, behavior: 'smooth' })} className="px-8 py-4 bg-white text-blue-900 rounded-full font-bold text-lg hover:bg-blue-50 transition shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105">
-                                    Bắt đầu Đấu giá ngay
+                            <div className="flex flex-col sm:flex-row justify-center gap-5 translate-y-4">
+                                <button onClick={() => window.scrollTo({ top: 800, behavior: 'smooth' })} className="px-10 py-5 bg-white text-blue-900 rounded-lg font-black text-lg hover:bg-blue-50 transition shadow-[0_20px_40px_-10px_rgba(255,255,255,0.2)] hover:scale-105 active:scale-95">
+                                    Bắt đầu Đấu giá
                                 </button>
-                                <Link to="/register" className="px-8 py-4 bg-blue-800/50 backdrop-blur-md border border-blue-400/30 text-white rounded-full font-bold text-lg hover:bg-blue-700/50 transition">
+                                <Link to="/register" className="px-10 py-5 bg-white/10 backdrop-blur-xl border border-white/20 text-white rounded-lg font-black text-lg hover:bg-white/20 transition shadow-xl hover:scale-105 active:scale-95">
                                     Đăng ký Người bán
                                 </Link>
                             </div>
@@ -212,22 +219,22 @@ const ProductListPage = () => {
                     {/* Value Props */}
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20 mb-16">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
-                                <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 rotate-3">
+                            <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
+                                <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4 rotate-3">
                                     <ShieldCheck size={28} />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">Bảo vệ người mua</h3>
                                 <p className="text-gray-500 text-sm">Giao dịch qua hệ thống trung gian uy tín, đảm bảo an toàn tuyệt đối cho dòng tiền của bạn.</p>
                             </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
-                                <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-4 -rotate-3">
+                            <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
+                                <div className="w-14 h-14 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-4 -rotate-3">
                                     <Zap size={28} />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">Đấu giá thời gian thực</h3>
                                 <p className="text-gray-500 text-sm">Công nghệ WebSocket cập nhật giá ngay lập tức. Tính năng chống Snipe bảo vệ quyền lợi phút chót.</p>
                             </div>
-                            <div className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
-                                <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-4 rotate-3">
+                            <div className="bg-white p-6 rounded-lg shadow-xl border border-gray-100 flex flex-col items-center text-center hover:-translate-y-1 transition duration-300">
+                                <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4 rotate-3">
                                     <Lock size={28} />
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-2">Thông tin minh bạch</h3>
@@ -240,16 +247,21 @@ const ProductListPage = () => {
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {isLanding ? (
-                    <div className="flex items-end justify-between border-b border-gray-200 pb-4 mb-6 mt-8">
-                        <div>
-                            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Sản phẩm đang lên sàn</h2>
-                            <p className="text-gray-500 text-sm mt-1">Cơ hội sở hữu hàng chất lượng với mức giá do bạn quyết định</p>
+                    <div className="flex flex-col mb-10 mt-12">
+                        <div className="flex items-center gap-3 mb-2">
+                             <div className="h-[2px] w-8 bg-blue-600"></div>
+                             <span className="text-xs font-black text-blue-600 uppercase tracking-widest">Sàn phẩm mới nhất</span>
                         </div>
+                        <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Sản phẩm đang đấu giá</h2>
+                        <p className="text-gray-500 font-medium mt-2">Đừng bỏ lỡ cơ hội sở hữu những vật phẩm độc đáo đang được săn đón</p>
                     </div>
                 ) : (
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 tracking-tight">
-                        {filter.keyword ? `Kết quả tìm kiếm cho "${filter.keyword}"` : 'Khám phá sản phẩm'}
-                    </h1>
+                    <div className="mb-10">
+                        <h1 className="text-3xl font-black text-gray-900 tracking-tighter">
+                            {filter.keyword ? `KẾT QUẢ CHO "${filter.keyword.toUpperCase()}"` : 'KHÁM PHÁ DANH MỤC'}
+                        </h1>
+                        <p className="text-gray-500 font-medium mt-1">Tìm thấy {products.length} sản phẩm phù hợp</p>
+                    </div>
                 )}
 
                 {/* Horizontal Filter Bar */}
@@ -270,41 +282,77 @@ const ProductListPage = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {products.map(p => {
                                     const isEnded = p.status !== 'ACTIVE' || new Date(p.end_time) <= new Date();
+                                    const isUpcoming = p.status === 'ACTIVE' && new Date(p.start_time) > new Date();
+                                    const hoursLeft = (new Date(p.end_time) - new Date()) / (1000 * 60 * 60);
+                                    const isEndingSoon = !isUpcoming && !isEnded && hoursLeft > 0 && hoursLeft < 24;
+
                                     return (
-                                    <Link to={`/products/${p.id}`} key={p.id} className="group flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative">
+                                    <Link to={`/products/${p.id}`} key={p.id} className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-xl shadow-gray-200/40 ring-1 ring-gray-100 hover:shadow-2xl hover:shadow-blue-900/10 transition-all duration-500 hover:-translate-y-2 relative">
                                         {isEnded && (
-                                            <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-20 flex items-center justify-center">
-                                                <span className="bg-gray-900/85 text-white px-6 py-2.5 mt-[-20%] rounded-full font-bold text-sm shadow-xl tracking-widest transform -rotate-12 border border-gray-700">
+                                            <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-20 flex items-center justify-center p-4">
+                                                <div className="bg-gray-900 text-white px-8 py-3 rounded-lg font-black text-sm shadow-2xl tracking-widest transform -rotate-12 border-2 border-white/20 scale-110">
                                                     ĐÃ KẾT THÚC
-                                                </span>
+                                                </div>
                                             </div>
                                         )}
-                                        <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
+                                        
+                                        <div className="aspect-[1/1] bg-gray-50 relative overflow-hidden">
+                                            {isEndingSoon && (
+                                                <div className="absolute top-4 left-4 z-10 bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg animate-pulse">
+                                                    <Zap size={10} fill="currentColor" /> Sắp kết thúc
+                                                </div>
+                                            )}
+                                            {isUpcoming && (
+                                                <div className="absolute top-4 left-4 z-10 bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-lg shadow-blue-900/20">
+                                                    <Clock size={10} /> Sắp diễn ra
+                                                </div>
+                                            )}
                                             {p.images && p.images.length > 0 ? (
-                                                <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">Không có ảnh</div>
                                             )}
+                                            
+                                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            
                                             <button 
-                                                className={`absolute top-2 right-2 p-1.5 bg-white/90 backdrop-blur-md rounded-full hover:bg-white transition shadow-sm z-10 ${p.is_watchlisted ? 'text-red-500' : 'text-gray-500 hover:text-red-500'}`}
+                                                className={`absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur-md rounded-lg hover:bg-white transition shadow-lg z-10 scale-90 group-hover:scale-100 ${p.is_watchlisted ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
                                                 onClick={(e) => handleWatchToggle(p.id, e)}
                                             >
-                                                <Heart size={16} fill={p.is_watchlisted ? 'currentColor' : 'none'} />
+                                                <Heart size={20} strokeWidth={2.5} fill={p.is_watchlisted ? 'currentColor' : 'none'} />
                                             </button>
                                         </div>
-                                        <div className="p-4 flex flex-col flex-1">
-                                            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition tracking-tight line-clamp-2 text-base mb-1 leading-snug">{p.title}</h3>
-                                            <p className="text-sm text-gray-500 mb-4">{p.condition_status === 'NEW' ? 'Hàng Mới' : 'Đã qua sử dụng'}</p>
+
+                                        <div className="p-6 flex flex-col flex-1">
+                                            <div className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-2 opacity-60">
+                                                {p.category_name || 'Đấu giá'}
+                                            </div>
+                                            <h3 className="font-extrabold text-gray-900 group-hover:text-blue-600 transition tracking-tight line-clamp-2 text-lg mb-4 leading-tight">
+                                                {p.title}
+                                            </h3>
                                             
-                                            <div className="mt-auto flex items-end justify-between">
-                                                <div className="text-2xl font-bold text-gray-900 tracking-tight">
-                                                    {Number(p.current_price).toLocaleString('vi-VN')} <span className="text-sm font-semibold text-gray-500">đ</span>
-                                                </div>
-                                                {!isEnded && (
-                                                    <div className="text-xs text-blue-700 font-medium bg-blue-50 px-2.5 py-1.5 rounded-lg whitespace-nowrap mb-0.5">
-                                                        <CountdownTimer endTime={p.end_time} />
+                                            <div className="mt-auto pt-4 border-t border-gray-100">
+                                                <div className="flex justify-between items-end">
+                                                    <div>
+                                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-tighter mb-0.5">
+                                                            {isUpcoming ? 'Giá khởi điểm' : 'Giá hiện tại'}
+                                                        </p>
+                                                        <div className="text-2xl font-black text-gray-900 tracking-tighter">
+                                                            {Number(p.current_price).toLocaleString('vi-VN')} <span className="text-xs font-bold text-gray-400">₫</span>
+                                                        </div>
                                                     </div>
-                                                )}
+                                                    
+                                                    {!isEnded && (
+                                                        <div className={`flex flex-col items-end ${isUpcoming ? 'bg-blue-600' : 'bg-gray-900'} text-white px-3 py-1.5 rounded-lg shadow-lg`}>
+                                                            <span className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-80">
+                                                                {isUpcoming ? 'Bắt đầu sau' : 'Kết thúc sau'}
+                                                            </span>
+                                                            <div className="text-[11px] font-bold">
+                                                                <CountdownTimer endTime={isUpcoming ? p.start_time : p.end_time} />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </Link>

@@ -25,7 +25,7 @@ const CustomSelect = ({ options, value, onChange, placeholder, disabled, classNa
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 py-2 text-left bg-white border ${
           error ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-600'
-        } rounded-xl focus:outline-none focus:ring-2 focus:border-transparent transition flex items-center justify-between ${
+        } rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition flex items-center justify-between ${
           disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
         }`}
       >
@@ -36,7 +36,7 @@ const CustomSelect = ({ options, value, onChange, placeholder, disabled, classNa
       </button>
       
       {isOpen && !disabled && (
-        <div className="absolute top-full left-0 z-50 w-full mt-2 bg-white border border-gray-100 rounded-xl shadow-xl max-h-60 overflow-auto animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full left-0 z-50 w-full mt-2 bg-white border border-gray-100 rounded-lg shadow-xl max-h-60 overflow-auto animate-in fade-in slide-in-from-top-2 duration-200">
           <ul className="py-1">
             {options.length === 0 ? (
               <li className="px-4 py-3 text-sm text-gray-500 text-center">Không có dữ liệu</li>

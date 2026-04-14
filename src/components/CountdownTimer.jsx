@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 
-const CountdownTimer = ({ endTime, onEnded }) => {
+const CountdownTimer = ({ endTime, onEnded, forcedEnd }) => {
     const [timeLeft, setTimeLeft] = useState('');
     const [isAlert, setIsAlert] = useState(false);
     const [isEnded, setIsEnded] = useState(false);
 
     useEffect(() => {
+        if (forcedEnd) {
+            setIsEnded(true);
+            setTimeLeft('Đấu giá đã kết thúc');
+            return;
+        }
+
         if (!endTime) return;
 
         const updateTimer = () => {

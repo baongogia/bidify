@@ -6,7 +6,9 @@ import { createProduct } from '../services/productService';
 import CustomSelect from '../components/CustomSelect';
 
 const CreateProductPage = () => {
-    const { register, handleSubmit, control, formState: { errors } } = useForm();
+    const { register, handleSubmit, control, setValue, formState: { errors } } = useForm({
+        defaultValues: { duration_minutes: 1440 }
+    });
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [categories, setCategories] = useState([]);
@@ -45,7 +47,8 @@ const CreateProductPage = () => {
                 condition_status: data.condition_status,
                 starting_price: parseFloat(data.starting_price),
                 images: imageUrls,
-                duration_hours: parseInt(data.duration_hours)
+                duration_minutes: parseInt(data.duration_minutes),
+                start_time: data.start_time || undefined
             };
 
             const res = await createProduct(productData);
@@ -185,29 +188,86 @@ const CreateProductPage = () => {
                     {/* Duration */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Thời gian đấu giá (giờ) <span className="text-red-500">*</span>
+                            Thời lượng đấu giá <span className="text-red-500">*</span>
                         </label>
-                        <Controller
-                            name="duration_hours"
-                            control={control}
-                            rules={{ required: "Thời gian là bắt buộc" }}
-                            render={({ field }) => (
-                                <CustomSelect
-                                    value={field.value || ""}
-                                    onChange={field.onChange}
-                                    options={[
-                                        { value: "", label: "-- Chọn thời gian --" },
-                                        { value: "24", label: "24 giờ (1 ngày)" },
-                                        { value: "48", label: "48 giờ (2 ngày)" },
-                                        { value: "72", label: "72 giờ (3 ngày)" },
-                                        { value: "120", label: "120 giờ (5 ngày)" },
-                                        { value: "168", label: "168 giờ (7 ngày)" }
-                                    ]}
-                                    error={errors.duration_hours}
-                                />
-                            )}
+                        
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            {[
+                                { label: '15 phút', value: 15 },
+                                { label: '1 giờ', value: 60 },
+                                { label: '1 ngày', value: 1440 },
+                                { label: '3 ngày', value: 4320 },
+                                { label: '7 ngày', value: 10080 },
+                                { label: 'Tùy chỉnh', value: 'custom' }
+                            ].map((opt) => {
+                                const isSelected = opt.value === 'custom' 
+                                    ? ![15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes))
+                                    : Number(control._formValues.duration_minutes) === opt.value;
+                                
+                                return (
+                                    <button
+                                        key={opt.value}
+                                        type="button"
+                                        onClick={() => {
+                                            if (opt.value !== 'custom') {
+                                                setValue("duration_minutes", opt.value);
+                                            } else {
+                                                // If switching to custom, keep current or default to 60
+                                                if ([15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes))) {
+                                                    setValue("duration_minutes", 60);
+                                                }
+                                            }
+                                        }}
+                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all border ${
+                                            isSelected 
+                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20' 
+                                                : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                        }`}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Custom Input (Always visible if custom value is detected, or if 'custom' is active) */}
+                        {(![15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes)) || true) && (
+                            <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                                <label className="block text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2">
+                                    Nhập số phút cụ thể
+                                </label>
+                                <div className="relative">
+                                    <input 
+                                        type="number" 
+                                        {...register("duration_minutes", { 
+                                            required: "Vui lòng nhập thời gian",
+                                            min: { value: 1, message: "Ít nhất 1 phút" },
+                                            max: { value: 10080, message: "Tối đa 7 ngày (10080 phút)" }
+                                        })} 
+                                        placeholder="VD: 45"
+                                        className="w-full pl-4 pr-12 py-3 bg-white border border-blue-200 rounded-xl focus:ring-4 focus:ring-blue-100 outline-none transition font-bold text-lg"
+                                    />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-400">phút</span>
+                                </div>
+                                <p className="text-[11px] text-blue-500 mt-2 font-medium">
+                                    {Math.floor(control._formValues.duration_minutes / 1440)} ngày {Math.floor((control._formValues.duration_minutes % 1440) / 60)} giờ {control._formValues.duration_minutes % 60} phút
+                                </p>
+                            </div>
+                        )}
+                        {errors.duration_minutes && <span className="text-xs text-red-500 mt-1 block font-medium">{errors.duration_minutes.message}</span>}
+                    </div>
+
+                    {/* Start Time */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Thời gian bắt đầu <span className="text-gray-500 font-normal">(Tuỳ chọn)</span>
+                        </label>
+                        <input 
+                            type="datetime-local" 
+                            {...register("start_time")}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
                         />
-                        {errors.duration_hours && <span className="text-xs text-red-500 mt-1 block">{errors.duration_hours.message}</span>}
+                        <p className="text-xs text-gray-500 mt-1">Nếu để trống, sản phẩm sẽ bắt đầu đấu giá ngay sau khi được Admin phê duyệt.</p>
                     </div>
 
                     {/* Images */}
