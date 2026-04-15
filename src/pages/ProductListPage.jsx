@@ -87,6 +87,12 @@ const ProductListPage = () => {
 
   const [totalPages, setTotalPages] = useState(1);
 
+  const isLanding =
+    !filter.keyword &&
+    !filter.category_id &&
+    !filter.condition &&
+    filter.page === 1;
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -116,7 +122,10 @@ const ProductListPage = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await getProducts(filter);
+      const res = await getProducts({
+        ...filter,
+        limit: isLanding ? 72 : filter.limit,
+      });
       if (res.success) {
         setProducts(res.data.products);
         setTotalPages(res.data.pagination.totalPages || 1);
@@ -150,7 +159,8 @@ const ProductListPage = () => {
     }
   };
 
-  const renderProductCard = (p) => {
+  const renderProductCard = (p, layout = "grid") => {
+    const isRow = layout === "row";
     const isEnded = p.status !== "ACTIVE" || new Date(p.end_time) <= new Date();
     const isUpcoming =
       p.status === "ACTIVE" && new Date(p.start_time) > new Date();
@@ -162,7 +172,11 @@ const ProductListPage = () => {
       <Link
         to={`/products/${p.id}`}
         key={p.id}
-        className="group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm shadow-gray-900/5 ring-1 ring-gray-200/80 hover:shadow-md hover:ring-gray-300/90 transition-all duration-300 hover:-translate-y-0.5 relative h-full"
+        className={`group flex flex-col bg-white rounded-xl overflow-hidden shadow-sm shadow-gray-900/5 ring-1 ring-gray-200/80 hover:shadow-md hover:ring-gray-300/90 transition-all duration-300 hover:-translate-y-0.5 relative ${
+          isRow
+            ? "w-[min(280px,calc(100vw-3rem))] shrink-0 snap-start"
+            : "h-full"
+        }`}
       >
         <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
           {isEnded && (
@@ -255,11 +269,45 @@ const ProductListPage = () => {
     );
   };
 
-  const isLanding =
-    !filter.keyword &&
-    !filter.category_id &&
-    !filter.condition &&
-    filter.page === 1;
+  const renderRecentlyEndedSection = () => {
+    const now = new Date();
+    const endedList = products
+      .filter(
+        (p) => p.status !== "ACTIVE" || new Date(p.end_time) <= now,
+      )
+      .sort((a, b) => {
+        const endB = new Date(b.end_time).getTime();
+        const endA = new Date(a.end_time).getTime();
+        if (endB !== endA) return endB - endA;
+        return (b.id ?? 0) - (a.id ?? 0);
+      });
+
+    if (endedList.length === 0) return null;
+
+    return (
+      <section className="opacity-95 hover:opacity-100 transition-all duration-500">
+        <div className="flex flex-col mb-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-[2px] w-8 bg-gray-400" />
+            <span className="text-xs font-black text-gray-500 uppercase tracking-widest">
+              Đã kết thúc
+            </span>
+          </div>
+          <h2 className="text-3xl font-black text-gray-700 tracking-tighter">
+            Phiên đấu giá vừa qua
+          </h2>
+        </div>
+        <div className="-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+          <div
+            className="flex gap-4 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
+            {endedList.map((p) => renderProductCard(p, "row"))}
+          </div>
+        </div>
+      </section>
+    );
+  };
 
   // Components to render filters horizontally
   const renderFilters = () => (
@@ -443,6 +491,7 @@ const ProductListPage = () => {
             </div>
           ) : (
             <div className="space-y-16">
+              {isLanding && renderRecentlyEndedSection()}
               {/* Active Auctions Section */}
               {(() => {
                 const activeList = products.filter(
@@ -527,36 +576,13 @@ const ProductListPage = () => {
                 );
               })()}
 
-                            {/* Recently Ended Section */}
-                            {(() => {
-                                const now = new Date();
-                                const endedList = products
-                                    .filter(p => p.status !== 'ACTIVE' || new Date(p.end_time) <= now)
-                                    .sort((a, b) => new Date(b.end_time) - new Date(a.end_time));
-                                
-                                if (endedList.length === 0) return null;
-
-                                return (
-                                    <section className="opacity-95 hover:opacity-100 transition-all duration-500">
-                                        <div className="flex flex-col mb-8">
-                                            <div className="flex items-center gap-3 mb-2">
-                                                 <div className="h-[2px] w-8 bg-gray-400"></div>
-                                                 <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Đã kết thúc</span>
-                                            </div>
-                                            <h2 className="text-3xl font-black text-gray-700 tracking-tighter">Phiên đấu giá vừa qua</h2>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
-                                            {endedList.map(p => renderProductCard(p))}
-                                        </div>
-                                    </section>
-                                );
-                            })()}
+              {!isLanding && renderRecentlyEndedSection()}
             </div>
           )}
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
+        {/* Pagination — ẩn trên landing (đã tải một lần + cuộn ngang) */}
+        {totalPages > 1 && !isLanding && (
           <div className="mt-12 flex justify-center gap-2">
             <button
               disabled={filter.page === 1}

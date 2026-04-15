@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
@@ -7,8 +7,15 @@ import { loginUser } from '../services/authService';
 const LoginPage = () => {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [errorMsg, setErrorMsg] = useState('');
-    const { login } = useContext(AuthContext);
+    const { login, user, isAuthenticated, loading } = useContext(AuthContext);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (loading) return;
+        if (isAuthenticated && user?.role === 'ADMIN') {
+            navigate('/admin', { replace: true });
+        }
+    }, [loading, isAuthenticated, user, navigate]);
 
     const onSubmit = async (data) => {
         try {
@@ -16,7 +23,11 @@ const LoginPage = () => {
             const res = await loginUser(data.email, data.password);
             if (res.success) {
                 login(res.data.token, res.data.user);
-                navigate('/');
+                if (res.data.user?.role === 'ADMIN') {
+                    navigate('/admin', { replace: true });
+                } else {
+                    navigate('/', { replace: true });
+                }
             }
         } catch (err) {
             setErrorMsg(err.message || 'Đăng nhập thất bại');

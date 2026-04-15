@@ -5,10 +5,17 @@ import { getCategories } from '../services/categoryService';
 import { createProduct } from '../services/productService';
 import CustomSelect from '../components/CustomSelect';
 
+const DURATION_PRESETS = [15, 60, 1440, 4320, 10080];
+
 const CreateProductPage = () => {
-    const { register, handleSubmit, control, setValue, formState: { errors } } = useForm({
+    const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm({
         defaultValues: { duration_minutes: 1440 }
     });
+    const durationWatch = watch('duration_minutes');
+    const durationNum = durationWatch === '' || durationWatch == null
+        ? NaN
+        : Number(durationWatch);
+    const isPresetDuration = Number.isFinite(durationNum) && DURATION_PRESETS.includes(durationNum);
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
     const [categories, setCategories] = useState([]);
@@ -200,21 +207,27 @@ const CreateProductPage = () => {
                                 { label: '7 ngày', value: 10080 },
                                 { label: 'Tùy chỉnh', value: 'custom' }
                             ].map((opt) => {
-                                const isSelected = opt.value === 'custom' 
-                                    ? ![15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes))
-                                    : Number(control._formValues.duration_minutes) === opt.value;
-                                
+                                const isSelected =
+                                    opt.value === 'custom'
+                                        ? !isPresetDuration
+                                        : isPresetDuration && durationNum === opt.value;
+
                                 return (
                                     <button
                                         key={opt.value}
                                         type="button"
                                         onClick={() => {
                                             if (opt.value !== 'custom') {
-                                                setValue("duration_minutes", opt.value);
+                                                setValue("duration_minutes", opt.value, {
+                                                    shouldValidate: true,
+                                                    shouldDirty: true,
+                                                });
                                             } else {
-                                                // If switching to custom, keep current or default to 60
-                                                if ([15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes))) {
-                                                    setValue("duration_minutes", 60);
+                                                if (isPresetDuration) {
+                                                    setValue("duration_minutes", 45, {
+                                                        shouldValidate: true,
+                                                        shouldDirty: true,
+                                                    });
                                                 }
                                             }
                                         }}
@@ -230,9 +243,7 @@ const CreateProductPage = () => {
                             })}
                         </div>
 
-                        {/* Custom Input (Always visible if custom value is detected, or if 'custom' is active) */}
-                        {(![15, 60, 1440, 4320, 10080].includes(Number(control._formValues.duration_minutes)) || true) && (
-                            <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                        <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
                                 <label className="block text-[10px] font-black uppercase tracking-widest text-blue-600 mb-2">
                                     Nhập số phút cụ thể
                                 </label>
@@ -250,10 +261,12 @@ const CreateProductPage = () => {
                                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-blue-400">phút</span>
                                 </div>
                                 <p className="text-[11px] text-blue-500 mt-2 font-medium">
-                                    {Math.floor(control._formValues.duration_minutes / 1440)} ngày {Math.floor((control._formValues.duration_minutes % 1440) / 60)} giờ {control._formValues.duration_minutes % 60} phút
+                                    {(() => {
+                                        const m = Number.isFinite(durationNum) ? durationNum : 0;
+                                        return `${Math.floor(m / 1440)} ngày ${Math.floor((m % 1440) / 60)} giờ ${m % 60} phút`;
+                                    })()}
                                 </p>
                             </div>
-                        )}
                         {errors.duration_minutes && <span className="text-xs text-red-500 mt-1 block font-medium">{errors.duration_minutes.message}</span>}
                     </div>
 

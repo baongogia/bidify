@@ -31,6 +31,8 @@ const STATUS_CONFIG = {
     REJECTED: { label: 'Bị từ chối', color: 'bg-orange-100 text-orange-700 border-orange-200' },
 };
 
+const DURATION_PRESETS = [15, 60, 1440, 4320, 10080];
+
 const SellerProductsPage = () => {
     const { showAlert, showConfirm } = useModal();
     const [products, setProducts] = useState([]);
@@ -367,6 +369,14 @@ const SellerProductsPage = () => {
                                                                      <Timer size={14} /> Thời lượng
                                                                 </label>
                                                                 <div className="grid grid-cols-3 gap-2">
+                                                                    {(() => {
+                                                                        const durN = Number(form.duration_minutes);
+                                                                        const presetActive =
+                                                                            form.duration_minutes !== '' &&
+                                                                            !Number.isNaN(durN) &&
+                                                                            DURATION_PRESETS.includes(durN);
+                                                                        return (
+                                                                            <>
                                                                     {[
                                                                         { label: '15p', value: 15 },
                                                                         { label: '1h', value: 60 },
@@ -378,7 +388,7 @@ const SellerProductsPage = () => {
                                                                             key={opt.value}
                                                                             type="button"
                                                                             onClick={() => setForm(prev => ({ ...prev, duration_minutes: opt.value }))}
-                                                                            className={`py-2 rounded-lg text-xs font-bold border transition ${Number(form.duration_minutes) === opt.value ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-500'}`}
+                                                                            className={`py-2 rounded-lg text-xs font-bold border transition ${presetActive && durN === opt.value ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-500'}`}
                                                                         >
                                                                             {opt.label}
                                                                         </button>
@@ -386,12 +396,15 @@ const SellerProductsPage = () => {
                                                                     <div className="relative">
                                                                          <input 
                                                                              type="number" 
-                                                                             className="w-full h-full text-[10px] font-bold border border-gray-200 rounded-lg text-center focus:border-blue-500 outline-none"
+                                                                             className={`w-full h-full min-h-[34px] text-[10px] font-bold border rounded-lg text-center focus:border-blue-500 outline-none ${!presetActive ? 'border-blue-400 bg-blue-50/40' : 'border-gray-200'}`}
                                                                              placeholder="..."
-                                                                             value={[15, 60, 1440, 4320, 10080].includes(Number(form.duration_minutes)) ? '' : form.duration_minutes}
+                                                                             value={presetActive ? '' : form.duration_minutes}
                                                                              onChange={(e) => setForm(prev => ({ ...prev, duration_minutes: e.target.value }))}
                                                                          />
                                                                     </div>
+                                                                            </>
+                                                                        );
+                                                                    })()}
                                                                 </div>
                                                             </div>
 
