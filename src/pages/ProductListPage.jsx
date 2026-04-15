@@ -17,6 +17,19 @@ import {
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 
+const TERMINAL_PRODUCT_STATUSES = [
+  "ENDED_WAITING_PAYMENT",
+  "COMPLETED",
+  "UNSOLD",
+  "CANCELLED",
+];
+
+const isProductAuctionEnded = (p, now = new Date()) => {
+  if (TERMINAL_PRODUCT_STATUSES.includes(p.status)) return true;
+  if (p.status === "ACTIVE" && new Date(p.end_time) <= now) return true;
+  return false;
+};
+
 const CustomSelect = ({ value, onChange, options, minWidth = "150px" }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = React.useRef(null);
@@ -161,12 +174,18 @@ const ProductListPage = () => {
 
   const renderProductCard = (p, layout = "grid") => {
     const isRow = layout === "row";
-    const isEnded = p.status !== "ACTIVE" || new Date(p.end_time) <= new Date();
+    const now = new Date();
+    const isEnded = isProductAuctionEnded(p, now);
     const isUpcoming =
-      p.status === "ACTIVE" && new Date(p.start_time) > new Date();
-    const hoursLeft = (new Date(p.end_time) - new Date()) / (1000 * 60 * 60);
+      ["ACTIVE", "PENDING"].includes(p.status) &&
+      new Date(p.start_time) > now;
+    const hoursLeft = (new Date(p.end_time) - now) / (1000 * 60 * 60);
+    const isLiveActive =
+      p.status === "ACTIVE" &&
+      new Date(p.start_time) <= now &&
+      new Date(p.end_time) > now;
     const isEndingSoon =
-      !isUpcoming && !isEnded && hoursLeft > 0 && hoursLeft < 24;
+      isLiveActive && hoursLeft > 0 && hoursLeft < 24;
 
     return (
       <Link
@@ -272,9 +291,7 @@ const ProductListPage = () => {
   const renderRecentlyEndedSection = () => {
     const now = new Date();
     const endedList = products
-      .filter(
-        (p) => p.status !== "ACTIVE" || new Date(p.end_time) <= now,
-      )
+      .filter((p) => isProductAuctionEnded(p, now))
       .sort((a, b) => {
         const endB = new Date(b.end_time).getTime();
         const endA = new Date(a.end_time).getTime();
@@ -494,22 +511,20 @@ const ProductListPage = () => {
               {isLanding && renderRecentlyEndedSection()}
               {/* Active Auctions Section */}
               {(() => {
-                const activeList = products.filter(
-                  (p) =>
-                    !(
-                      (p.status === "ACTIVE" &&
-                        new Date(p.start_time) > new Date()) ||
-                      p.status !== "ACTIVE" ||
-                      new Date(p.end_time) <= new Date()
-                    ),
-                );
+                const activeList = products.filter((p) => {
+                  const t = new Date();
+                  if (p.status !== "ACTIVE") return false;
+                  if (new Date(p.start_time) > t) return false;
+                  if (new Date(p.end_time) <= t) return false;
+                  return true;
+                });
                 if (activeList.length === 0 && !isLanding) return null;
                 if (
                   activeList.length === 0 &&
                   isLanding &&
                   products.filter(
                     (p) =>
-                      p.status === "ACTIVE" &&
+                      ["ACTIVE", "PENDING"].includes(p.status) &&
                       new Date(p.start_time) > new Date(),
                   ).length === 0
                 )
@@ -551,7 +566,7 @@ const ProductListPage = () => {
               {(() => {
                 const upcomingList = products.filter(
                   (p) =>
-                    p.status === "ACTIVE" &&
+                    ["ACTIVE", "PENDING"].includes(p.status) &&
                     new Date(p.start_time) > new Date(),
                 );
                 if (upcomingList.length === 0) return null;

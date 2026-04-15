@@ -10,10 +10,12 @@ const CountdownTimer = ({ endTime, onEnded, forcedEnd }) => {
         if (forcedEnd) {
             setIsEnded(true);
             setTimeLeft('Đấu giá đã kết thúc');
-            return;
+            return undefined;
         }
 
-        if (!endTime) return;
+        setIsEnded(false);
+
+        if (!endTime) return undefined;
 
         const updateTimer = () => {
             const now = dayjs();
@@ -51,7 +53,7 @@ const CountdownTimer = ({ endTime, onEnded, forcedEnd }) => {
         const interval = setInterval(updateTimer, 1000);
 
         return () => clearInterval(interval);
-    }, [endTime, onEnded]);
+    }, [endTime, onEnded, forcedEnd]);
 
     if (isEnded) {
         return <span className="text-gray-500 font-medium">{timeLeft}</span>;

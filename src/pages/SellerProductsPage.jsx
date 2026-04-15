@@ -4,6 +4,7 @@ import { getCategories } from '../services/categoryService';
 import { deleteMyProduct, getMyProducts, updateMyProduct } from '../services/productService';
 import dayjs from 'dayjs';
 import CustomSelect from '../components/CustomSelect';
+import { parseAttributeLines, attributesToLines } from '../utils/productAttributes';
 import { useModal } from '../context/ModalContext';
 import { 
     Package, 
@@ -47,7 +48,13 @@ const SellerProductsPage = () => {
         duration_minutes: 1440,
         start_time: '',
         description: '',
-        images: ''
+        images: '',
+        buy_now_price: '',
+        bid_increment: '',
+        deposit_required: '0',
+        location: '',
+        video_url: '',
+        attributes_spec: '',
     });
 
     useEffect(() => {
@@ -87,7 +94,13 @@ const SellerProductsPage = () => {
             duration_minutes: diffMinutes || 1440,
             start_time: product.start_time ? dayjs(product.start_time).format('YYYY-MM-DDTHH:mm') : '',
             description: product.description || '',
-            images: Array.isArray(product.images) ? product.images.join('\n') : ''
+            images: Array.isArray(product.images) ? product.images.join('\n') : '',
+            buy_now_price: product.buy_now_price != null ? String(product.buy_now_price) : '',
+            bid_increment: product.bid_increment != null ? String(product.bid_increment) : '',
+            deposit_required: product.deposit_required != null ? String(product.deposit_required) : '0',
+            location: product.location || '',
+            video_url: product.video_url || '',
+            attributes_spec: attributesToLines(product.attributes),
         });
         
         // Scroll to form with smooth offset
@@ -114,7 +127,13 @@ const SellerProductsPage = () => {
                 images: form.images
                     .split(/[\n,]+/)
                     .map((item) => item.trim())
-                    .filter(Boolean)
+                    .filter(Boolean),
+                buy_now_price: form.buy_now_price === '' ? null : Number(form.buy_now_price),
+                bid_increment: form.bid_increment === '' ? null : Number(form.bid_increment),
+                deposit_required: form.deposit_required === '' ? 0 : Number(form.deposit_required),
+                location: form.location?.trim() || null,
+                video_url: form.video_url?.trim() || null,
+                attributes: parseAttributeLines(form.attributes_spec) ?? null,
             };
 
             const res = await updateMyProduct(id, payload);
@@ -325,6 +344,33 @@ const SellerProductsPage = () => {
                                                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all font-medium text-gray-700 resize-none text-xs"
                                                                 placeholder="Mỗi dòng là 1 đường dẫn ảnh..."
                                                             />
+                                                        </div>
+
+                                                        <div className="grid sm:grid-cols-2 gap-3 p-4 bg-white border border-gray-100 rounded-xl space-y-3 sm:space-y-0">
+                                                            <div className="space-y-1.5 sm:col-span-2">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Thông số (mỗi dòng: Nhãn: Giá trị)</label>
+                                                                <textarea rows={3} value={form.attributes_spec} onChange={(e) => setForm((p) => ({ ...p, attributes_spec: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono" placeholder="Năm: 2020" />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Giá mua ngay</label>
+                                                                <input type="number" value={form.buy_now_price} onChange={(e) => setForm((p) => ({ ...p, buy_now_price: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Tuỳ chọn" />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Bước giá</label>
+                                                                <input type="number" value={form.bid_increment} onChange={(e) => setForm((p) => ({ ...p, bid_increment: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" placeholder="Mặc định hệ thống" />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Cọc (VNĐ)</label>
+                                                                <input type="number" value={form.deposit_required} onChange={(e) => setForm((p) => ({ ...p, deposit_required: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                                                            </div>
+                                                            <div className="space-y-1.5">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Vị trí</label>
+                                                                <input type="text" value={form.location} onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                                                            </div>
+                                                            <div className="space-y-1.5 sm:col-span-2">
+                                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Video URL</label>
+                                                                <input type="url" value={form.video_url} onChange={(e) => setForm((p) => ({ ...p, video_url: e.target.value }))} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                                                            </div>
                                                         </div>
                                                     </div>
 

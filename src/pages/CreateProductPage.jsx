@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCategories } from '../services/categoryService';
 import { createProduct } from '../services/productService';
 import CustomSelect from '../components/CustomSelect';
+import { parseAttributeLines } from '../utils/productAttributes';
 
 const DURATION_PRESETS = [15, 60, 1440, 4320, 10080];
 
@@ -55,7 +56,13 @@ const CreateProductPage = () => {
                 starting_price: parseFloat(data.starting_price),
                 images: imageUrls,
                 duration_minutes: parseInt(data.duration_minutes),
-                start_time: data.start_time || undefined
+                start_time: data.start_time || undefined,
+                buy_now_price: data.buy_now_price ? parseFloat(data.buy_now_price) : undefined,
+                bid_increment: data.bid_increment ? parseFloat(data.bid_increment) : undefined,
+                deposit_required: data.deposit_required ? parseFloat(data.deposit_required) : 0,
+                location: data.location?.trim() || undefined,
+                video_url: data.video_url?.trim() || undefined,
+                attributes: parseAttributeLines(data.attributes_spec),
             };
 
             const res = await createProduct(productData);
@@ -295,6 +302,36 @@ const CreateProductPage = () => {
                             className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition text-sm"
                         />
                         <p className="text-xs text-gray-500 mt-1">VD: https://example.com/image1.jpg</p>
+                    </div>
+
+                    <div className="border border-gray-200 rounded-2xl p-6 space-y-4 bg-gray-50/50">
+                        <h3 className="text-sm font-bold text-gray-900">Thông tin đấu giá &amp; sản phẩm bổ sung</h3>
+                        <div className="grid sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">Giá mua ngay (tuỳ chọn)</label>
+                                <input type="number" {...register('buy_now_price', { min: 0 })} placeholder="VNĐ — để trống nếu không áp dụng" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">Bước giá tối thiểu (tuỳ chọn)</label>
+                                <input type="number" {...register('bid_increment', { min: 0 })} placeholder="Để trống = theo bảng hệ thống" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">Tiền cọc tham gia (VNĐ)</label>
+                                <input type="number" {...register('deposit_required', { min: 0 })} placeholder="0 = không yêu cầu" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-semibold text-gray-600 mb-1">Vị trí / khu vực</label>
+                                <input type="text" {...register('location')} placeholder="VD: Quận 1, TP.HCM" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Link video (YouTube / URL)</label>
+                            <input type="url" {...register('video_url')} placeholder="https://..." className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-600 mb-1">Thông số bổ sung (mỗi dòng: Nhãn: Giá trị)</label>
+                            <textarea {...register('attributes_spec')} rows={4} placeholder={'Năm sản xuất: 2020\nMàu sắc: Đỏ\nODO: 15.000 km'} className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm font-mono" />
+                        </div>
                     </div>
 
                     {/* Submit Button */}

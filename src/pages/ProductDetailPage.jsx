@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductDetail } from '../services/productService';
+import { getProductDetail, getProducts } from '../services/productService';
 import { placeBid } from '../services/bidService';
 import { toggleWatchlist } from '../services/watchlistService';
 import { AuthContext } from '../context/AuthContext';
@@ -8,8 +8,49 @@ import useAuctionSocket from '../hooks/useAuctionSocket';
 import SkeletonDetail from '../components/SkeletonDetail';
 import CountdownTimer from '../components/CountdownTimer';
 import BidHistoryModal from '../components/BidHistoryModal';
-import { Heart, Tag, User, ShieldCheck, Clock, ChevronRight, Minus, Plus, Trophy, PartyPopper } from 'lucide-react';
+import { Heart, User, ShieldCheck, Clock, ChevronRight, Minus, Plus, Trophy, PartyPopper, MapPin, Share2, Flag, Star, MessageCircle, ExternalLink } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
+
+const formatDateTimeVi = (iso) => {
+    if (!iso) return '—';
+    try {
+        return new Date(iso).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch {
+        return String(iso);
+    }
+};
+
+const resolveBidStep = (prod, price) => {
+    if (prod?.bid_increment != null && Number(prod.bid_increment) > 0) {
+        return Number(prod.bid_increment);
+    }
+    const p = Number(price);
+    if (p < 1000000) return 50000;
+    if (p < 5000000) return 100000;
+    return 200000;
+};
+
+const toYoutubeEmbedUrl = (raw) => {
+    if (!raw || !String(raw).trim()) return null;
+    const s = String(raw).trim();
+    try {
+        const u = new URL(s);
+        const host = u.hostname.replace(/^www\./, '');
+        if (host === 'youtu.be') {
+            const id = u.pathname.replace(/^\//, '').split('/')[0];
+            return id ? `https://www.youtube.com/embed/${id}` : null;
+        }
+        if (host.includes('youtube.com')) {
+            const v = u.searchParams.get('v');
+            if (v) return `https://www.youtube.com/embed/${v}`;
+            const m = u.pathname.match(/\/embed\/([^/]+)/);
+            if (m) return `https://www.youtube.com/embed/${m[1]}`;
+        }
+    } catch {
+        return null;
+    }
+    return null;
+};
 
 const ProductDetailPage = () => {
     const { showAlert } = useModal();
@@ -27,6 +68,7 @@ const ProductDetailPage = () => {
     const [latestBid, setLatestBid] = useState(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showConfetti, setShowConfetti] = useState(false);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -36,6 +78,29 @@ const ProductDetailPage = () => {
     useEffect(() => {
         fetchDetail();
     }, [id]);
+
+    useEffect(() => {
+        if (!product?.category_id) return;
+        (async () => {
+            try {
+                const res = await getProducts({
+                    category_id: product.category_id,
+                    limit: 16,
+                    page: 1,
+                    sort: 'ending_soon',
+                });
+                if (res.success) {
+                    setRelatedProducts(
+                        res.data.products
+                            .filter((x) => String(x.id) !== String(id))
+                            .slice(0, 8),
+                    );
+                }
+            } catch {
+                setRelatedProducts([]);
+            }
+        })();
+    }, [product?.category_id, id]);
 
     const fetchDetail = async () => {
         setLoading(true);
@@ -56,14 +121,18 @@ const ProductDetailPage = () => {
     useAuctionSocket(id, 
         (data) => {
             // new_bid
-            setProduct(prev => prev ? {
-                ...prev,
-                current_price: data.amount,
-                total_bids: prev.total_bids + 1,
-                min_valid_bid: Number(data.amount) + getBidStep(data.amount)
-            } : prev);
-            // Optionally update bidAmount input if user hasn't typed
-            setBidAmount(Number(data.amount) + getBidStep(data.amount));
+            setProduct((prev) => {
+                if (!prev) return prev;
+                const step = resolveBidStep(prev, data.amount);
+                const nextMin = Number(data.amount) + step;
+                setBidAmount(nextMin);
+                return {
+                    ...prev,
+                    current_price: data.amount,
+                    total_bids: prev.total_bids + 1,
+                    min_valid_bid: nextMin,
+                };
+            });
             setLatestBid({
                 id: Date.now(),
                 bidder_name: data.bidder_name,
@@ -98,13 +167,6 @@ const ProductDetailPage = () => {
         }
     );
 
-    const getBidStep = (price) => {
-        const p = Number(price);
-        if (p < 1000000) return 50000;
-        if (p < 5000000) return 100000;
-        return 200000;
-    };
-
     const handleBid = async (e) => {
         e.preventDefault();
         setBidError('');
@@ -118,7 +180,7 @@ const ProductDetailPage = () => {
             const res = await placeBid(id, bidAmount);
             if (res.success) {
                 const placedAmount = Number(res.data.amount);
-                const nextMinBid = placedAmount + getBidStep(placedAmount);
+                const nextMinBid = placedAmount + resolveBidStep(product, placedAmount);
 
                 // Update local UI immediately; socket will keep all clients in sync.
                 setProduct(prev => prev ? {
@@ -155,13 +217,59 @@ const ProductDetailPage = () => {
         }
     };
 
+    const handleShare = async () => {
+        const url = window.location.href;
+        try {
+            if (navigator.share) {
+                await navigator.share({ title: product?.title || 'Bidify', url });
+            } else if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(url);
+                showAlert('Đã sao chép', 'Liên kết sản phẩm đã được sao chép.');
+            }
+        } catch (e) {
+            if (e?.name !== 'AbortError') {
+                showAlert('Chia sẻ', 'Không thể chia sẻ tự động. Hãy sao chép địa chỉ trên thanh trình duyệt.');
+            }
+        }
+    };
+
+    const handleReport = () => {
+        showAlert(
+            'Báo cáo tin đăng',
+            `Vui lòng gửi yêu cầu tới bộ phận kiểm duyệt kèm mã tin #${id} và lý do. Chúng tôi sẽ xử lý trong 24–48 giờ.`,
+        );
+    };
+
     if (loading) return <SkeletonDetail />;
     if (!product) return null;
 
-    const isEnded = product.status !== 'ACTIVE' || new Date(product.end_time) <= currentTime;
-    const isNotStarted = product.status === 'ACTIVE' && new Date(product.start_time) > currentTime;
-    const minBid = Number(product.min_valid_bid) || (Number(product.current_price) + 10000);
-    const bidStep = Math.max(minBid - Number(product.current_price), 10000);
+    const startMs = new Date(product.start_time).getTime();
+    const endMs = new Date(product.end_time).getTime();
+    const nowMs = currentTime.getTime();
+    const isBeforeStart = startMs > nowMs;
+    const isAfterEnd = endMs <= nowMs;
+
+    const TERMINAL_STATUSES = [
+        'ENDED_WAITING_PAYMENT',
+        'COMPLETED',
+        'UNSOLD',
+        'CANCELLED',
+    ];
+
+    /** Đã kết thúc: trạng thái kết thúc thật, hoặc ACTIVE nhưng đã quá giờ end (chờ cron). Không coi PENDING là đã xong. */
+    const isEnded =
+        TERMINAL_STATUSES.includes(product.status) ||
+        (product.status === 'ACTIVE' && isAfterEnd);
+
+    /** Sắp bắt đầu: ACTIVE/PENDING và chưa tới start_time */
+    const isNotStarted =
+        ['ACTIVE', 'PENDING'].includes(product.status) && isBeforeStart;
+
+    /** Đang trong cửa sổ phiên nhưng tin chờ duyệt */
+    const isPendingApproval =
+        product.status === 'PENDING' && !isBeforeStart && !isAfterEnd;
+    const minBid = Number(product.min_valid_bid) || (Number(product.current_price) + resolveBidStep(product, product.current_price));
+    const bidStep = resolveBidStep(product, product.current_price);
 
     const handleIncrement = () => {
         const val = Number(bidAmount) || minBid;
@@ -181,6 +289,15 @@ const ProductDetailPage = () => {
     const images = (product.images && product.images.length > 0) 
         ? product.images 
         : ['https://via.placeholder.com/600x600?text=No+Image'];
+
+    const attributeEntries =
+        product.attributes &&
+        typeof product.attributes === 'object' &&
+        !Array.isArray(product.attributes)
+            ? Object.entries(product.attributes)
+            : [];
+    const ytEmbed = toYoutubeEmbedUrl(product.video_url);
+    const sellerSales = Number(product.seller_completed_sales) || 0;
 
     return (
         <div className="bg-white min-h-screen pb-12">
@@ -215,10 +332,49 @@ const ProductDetailPage = () => {
                             </div>
                         )}
 
-                        {/* Description */}
+                        {attributeEntries.length > 0 && (
+                            <div className="mt-10 pt-8 border-t border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-900 mb-3">Thông số &amp; thuộc tính</h2>
+                                <div className="rounded-xl border border-gray-200 overflow-hidden">
+                                    <table className="w-full text-sm">
+                                        <tbody>
+                                            {attributeEntries.map(([k, v]) => (
+                                                <tr key={k} className="border-b border-gray-100 last:border-0">
+                                                    <th className="text-left py-2.5 px-4 bg-gray-50 font-semibold text-gray-700 w-2/5 align-top">{k}</th>
+                                                    <td className="py-2.5 px-4 text-gray-800 align-top">{String(v)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {ytEmbed && (
+                            <div className="mt-8 pt-8 border-t border-gray-200">
+                                <h2 className="text-xl font-bold text-gray-900 mb-3">Video</h2>
+                                <div className="aspect-video rounded-2xl overflow-hidden border border-gray-200 bg-black">
+                                    <iframe title="Video sản phẩm" src={ytEmbed} className="w-full h-full" allowFullScreen />
+                                </div>
+                            </div>
+                        )}
+                        {!ytEmbed && product.video_url && (
+                            <div className="mt-6">
+                                <a
+                                    href={product.video_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:underline"
+                                >
+                                    <ExternalLink size={14} /> Mở liên kết video
+                                </a>
+                            </div>
+                        )}
+
+                        {/* Description — người bán tự viết */}
                         <div className="mt-12 pt-8 border-t border-gray-200">
-                            <h2 className="text-xl font-bold text-gray-900 mb-4">Mô tả</h2>
-                            <div className="prose max-w-none text-gray-700">
+                            <h2 className="text-xl font-bold text-gray-900 mb-4">Mô tả từ người bán</h2>
+                            <div className="prose max-w-none text-gray-700 whitespace-pre-wrap">
                                 {product.description || 'Chưa có mô tả cho sản phẩm này.'}
                             </div>
                         </div>
@@ -236,9 +392,55 @@ const ProductDetailPage = () => {
                             </button>
                         </div>
                         
-                        <div className="flex items-center gap-2 text-sm text-gray-600 mb-6 pb-6 border-b border-gray-200">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 mb-3">
                             <span className="font-medium text-gray-900 bg-gray-100 px-3 py-1 rounded-full">{product.condition_status === 'NEW' ? 'Mới' : 'Đã qua sử dụng'}</span>
-                            <span className="flex items-center gap-1.5"><User size={14} className="text-gray-400" /> Người bán: <span className="text-blue-600 hover:underline cursor-pointer font-medium">{product.seller_name}</span></span>
+                            {product.category_name && (
+                                <span className="text-gray-500">
+                                    Danh mục: <strong className="text-gray-800">{product.category_name}</strong>
+                                </span>
+                            )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-gray-700 mb-2">
+                            <User size={14} className="text-gray-400" />
+                            <span className="font-semibold text-gray-900">{product.seller_name}</span>
+                            <span className="inline-flex items-center gap-0.5 text-amber-600 text-xs font-bold">
+                                <Star size={12} className="fill-amber-500 text-amber-500" />
+                                {sellerSales} giao dịch hoàn tất
+                            </span>
+                        </div>
+                        {product.location && (
+                            <div className="flex items-start gap-2 text-sm text-gray-600 mb-3">
+                                <MapPin size={16} className="text-gray-400 shrink-0 mt-0.5" />
+                                <span>{product.location}</span>
+                            </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 mb-6 pb-6 border-b border-gray-200">
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    showAlert(
+                                        'Liên hệ người bán',
+                                        'Kênh chat trực tiếp đang được triển khai. Bạn có thể dùng thông tin trong phần mô tả hoặc liên hệ hỗ trợ để được kết nối.',
+                                    )
+                                }
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-800 text-xs font-bold hover:bg-gray-200 transition"
+                            >
+                                <MessageCircle size={14} /> Nhắn người bán
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleShare}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+                            >
+                                <Share2 size={14} /> Chia sẻ
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleReport}
+                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-100 text-xs font-bold text-red-700 hover:bg-red-50 transition"
+                            >
+                                <Flag size={14} /> Báo cáo
+                            </button>
                         </div>
 
                         {/* Price Area */}
@@ -246,6 +448,43 @@ const ProductDetailPage = () => {
                             <div className="text-sm font-medium text-gray-500 uppercase tracking-widest mb-1">Giá hiện tại</div>
                             <div className="text-5xl font-extrabold text-gray-900 tracking-tight">
                                 {Number(product.current_price).toLocaleString('vi-VN')} <span className="text-2xl font-bold text-gray-500">đ</span>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
+                                <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                                    <div className="text-gray-500 font-semibold uppercase tracking-wide">Giá khởi điểm</div>
+                                    <div className="font-bold text-gray-900">{Number(product.starting_price).toLocaleString('vi-VN')} đ</div>
+                                </div>
+                                <div className="rounded-lg bg-gray-50 border border-gray-100 px-3 py-2">
+                                    <div className="text-gray-500 font-semibold uppercase tracking-wide">Bước giá tối thiểu</div>
+                                    <div className="font-bold text-gray-900">{bidStep.toLocaleString('vi-VN')} đ</div>
+                                </div>
+                                {product.buy_now_price != null && Number(product.buy_now_price) > 0 && (
+                                    <div className="rounded-lg bg-emerald-50 border border-emerald-100 px-3 py-2 col-span-2">
+                                        <div className="text-emerald-700 font-semibold uppercase tracking-wide">Giá mua ngay (tham khảo)</div>
+                                        <div className="font-bold text-emerald-900">{Number(product.buy_now_price).toLocaleString('vi-VN')} đ</div>
+                                        <p className="text-[10px] text-emerald-800/90 mt-1 leading-snug">
+                                            Có thể thỏa thuận với người bán; hệ thống vẫn ưu tiên đấu giá theo luật phiên.
+                                        </p>
+                                    </div>
+                                )}
+                                {Number(product.deposit_required) > 0 && (
+                                    <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2 col-span-2">
+                                        <div className="text-amber-800 font-semibold uppercase tracking-wide">Cọc tham gia (theo tin đăng)</div>
+                                        <div className="font-bold text-amber-900">{Number(product.deposit_required).toLocaleString('vi-VN')} đ</div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="mt-4 text-xs text-gray-600 space-y-1.5 border border-gray-100 rounded-xl px-3 py-2.5 bg-white">
+                                <div className="flex justify-between gap-2">
+                                    <span>Bắt đầu phiên</span>
+                                    <span className="font-medium text-gray-900 text-right">{formatDateTimeVi(product.start_time)}</span>
+                                </div>
+                                <div className="flex justify-between gap-2">
+                                    <span>Kết thúc dự kiến</span>
+                                    <span className="font-medium text-gray-900 text-right">{formatDateTimeVi(product.end_time)}</span>
+                                </div>
                             </div>
                             
                             <div className="mt-4 flex items-center justify-between text-sm py-3 px-4 bg-blue-50/50 rounded-xl border border-blue-100">
@@ -276,8 +515,17 @@ const ProductDetailPage = () => {
                                     <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3 text-blue-600">
                                         <Clock size={24} />
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-900">Phiên đấu giá chưa bắt đầu</h3>
-                                    <p className="text-gray-500 mt-1 mb-4">Sản phẩm này sẽ nhận đặt giá vào lúc: <br /> <strong className="text-blue-700">{new Date(product.start_time).toLocaleString('vi-VN')}</strong></p>
+                                    <h3 className="text-lg font-bold text-gray-900">Sắp bắt đầu đấu giá</h3>
+                                    <p className="text-gray-500 mt-1 mb-4">Phiên mở đặt giá lúc: <br /> <strong className="text-blue-700">{formatDateTimeVi(product.start_time)}</strong></p>
+                                    <p className="text-xs text-gray-400">Đếm ngược phía trên tới thời điểm bắt đầu.</p>
+                                </div>
+                            ) : isPendingApproval ? (
+                                <div className="text-center py-4">
+                                    <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-100 rounded-full mb-3 text-amber-600">
+                                        <Clock size={24} />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-gray-900">Tin đang chờ phê duyệt</h3>
+                                    <p className="text-gray-500 mt-1">Phiên chưa mở đặt giá cho tới khi được duyệt.</p>
                                 </div>
                             ) : isEnded ? (
                                 <div className="text-center py-4">
@@ -380,6 +628,37 @@ const ProductDetailPage = () => {
                         </div>
                     </div>
                 </div>
+
+                {relatedProducts.length > 0 && (
+                    <section className="mt-16 pt-12 border-t border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-900 mb-6">Sản phẩm cùng danh mục</h2>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {relatedProducts.map((rp) => {
+                                const thumb =
+                                    Array.isArray(rp.images) && rp.images.length > 0
+                                        ? rp.images[0]
+                                        : 'https://via.placeholder.com/400x300?text=No+Image';
+                                return (
+                                    <Link
+                                        key={rp.id}
+                                        to={`/products/${rp.id}`}
+                                        className="group rounded-xl border border-gray-200 overflow-hidden bg-white hover:shadow-md hover:border-gray-300 transition"
+                                    >
+                                        <div className="aspect-[4/3] bg-gray-100 overflow-hidden">
+                                            <img src={thumb} alt="" className="w-full h-full object-cover group-hover:scale-[1.03] transition duration-500" />
+                                        </div>
+                                        <div className="p-3">
+                                            <p className="text-sm font-semibold text-gray-900 line-clamp-2 group-hover:text-blue-600">{rp.title}</p>
+                                            <p className="text-sm font-bold text-gray-800 mt-1">
+                                                {Number(rp.current_price).toLocaleString('vi-VN')} đ
+                                            </p>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
+                        </div>
+                    </section>
+                )}
             </div>
 
             <BidHistoryModal 
