@@ -508,7 +508,6 @@ const ProductListPage = () => {
             </div>
           ) : (
             <div className="space-y-16">
-              {isLanding && renderRecentlyEndedSection()}
               {/* Active Auctions Section */}
               {(() => {
                 const activeList = products.filter((p) => {
@@ -591,7 +590,7 @@ const ProductListPage = () => {
                 );
               })()}
 
-              {!isLanding && renderRecentlyEndedSection()}
+              {renderRecentlyEndedSection()}
             </div>
           )}
         </div>
