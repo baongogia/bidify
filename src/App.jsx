@@ -5,6 +5,7 @@ import AdminRoute from './components/AdminRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
+import ScrollToTop from './components/ScrollToTop';
 import { AuthProvider } from './context/AuthContext';
 import { ModalProvider } from './context/ModalContext';
 import AdminCategoriesPage from './pages/AdminCategoriesPage';
@@ -30,6 +31,7 @@ const App = () => {
 		<AuthProvider>
 			<ModalProvider>
 				<BrowserRouter>
+				<ScrollToTop />
 				<div className="flex flex-col min-h-screen">
 					<Navbar />
 					<main className="flex-1 bg-gray-50/50">

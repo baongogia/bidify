@@ -242,7 +242,7 @@ const Navbar = () => {
                                                     <Link to="/admin/seller-applications" className="sm:hidden flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý Admin</Link>
                                                     <Link to="/admin/categories" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý danh mục</Link>
                                                     <Link to="/admin/users" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Quản lý người dùng</Link>
-                                                    <Link to="/admin/moderation" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Kiểm duyệt tin đăng</Link>
+                                                    <Link to="/admin/moderation" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Vi phạm &amp; báo cáo</Link>
                                                     <Link to="/admin/settings" className="flex items-center px-3 py-2.5 text-sm text-purple-700 hover:bg-purple-50 font-medium rounded-xl transition">Thiết lập hệ thống</Link>
                                                 </>
                                             )}

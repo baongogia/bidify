@@ -14,6 +14,8 @@ import {
   Filter,
   ChevronDown,
   Clock,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useModal } from "../context/ModalContext";
 
@@ -88,6 +90,18 @@ const ProductListPage = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const sliderRef = React.useRef(null);
+
+  const scrollSlider = (direction) => {
+    if (sliderRef.current) {
+      const { scrollLeft, clientWidth } = sliderRef.current;
+      const scrollAmount = clientWidth * 0.8;
+      sliderRef.current.scrollTo({
+        left: direction === 'left' ? scrollLeft - scrollAmount : scrollLeft + scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const [filter, setFilter] = useState({
     category_id: "",
@@ -177,15 +191,13 @@ const ProductListPage = () => {
     const now = new Date();
     const isEnded = isProductAuctionEnded(p, now);
     const isUpcoming =
-      ["ACTIVE", "PENDING"].includes(p.status) &&
-      new Date(p.start_time) > now;
+      ["ACTIVE", "PENDING"].includes(p.status) && new Date(p.start_time) > now;
     const hoursLeft = (new Date(p.end_time) - now) / (1000 * 60 * 60);
     const isLiveActive =
       p.status === "ACTIVE" &&
       new Date(p.start_time) <= now &&
       new Date(p.end_time) > now;
-    const isEndingSoon =
-      isLiveActive && hoursLeft > 0 && hoursLeft < 24;
+    const isEndingSoon = isLiveActive && hoursLeft > 0 && hoursLeft < 24;
 
     return (
       <Link
@@ -269,7 +281,7 @@ const ProductListPage = () => {
 
               {!isEnded && (
                 <div
-                  className={`shrink-0 flex flex-col items-end ${isUpcoming ? "bg-blue-600" : "bg-gray-900"} text-white px-2 py-1 rounded-md shadow-sm`}
+                  className={`shrink-0 flex flex-col items-end ${isUpcoming ? "bg-blue-800" : "bg-gray-900"} text-white px-2 py-1 rounded-md shadow-sm`}
                 >
                   <span className="text-[8px] font-bold uppercase tracking-wide opacity-90">
                     {isUpcoming ? "Bắt đầu sau" : "Kết thúc sau"}
@@ -314,13 +326,33 @@ const ProductListPage = () => {
             Phiên đấu giá vừa qua
           </h2>
         </div>
-        <div className="-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
-          <div
-            className="flex gap-4 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-track]:bg-gray-100"
-            style={{ WebkitOverflowScrolling: "touch" }}
-          >
-            {endedList.map((p) => renderProductCard(p, "row"))}
+        <div className="relative group/slider">
+          <div className="-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
+            <div
+              ref={sliderRef}
+              className="flex gap-4 overflow-x-auto pb-3 scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:display-none"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              {endedList.map((p) => renderProductCard(p, "row"))}
+            </div>
           </div>
+          
+          {/* Navigation Buttons */}
+          <button 
+            onClick={() => scrollSlider('left')}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 w-12 h-12 bg-white rounded-full shadow-xl border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all opacity-0 group-hover/slider:opacity-100 hidden sm:flex"
+            aria-label="Sau"
+          >
+            <ChevronLeft size={24} strokeWidth={2.5} />
+          </button>
+          
+          <button 
+            onClick={() => scrollSlider('right')}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30 w-12 h-12 bg-white rounded-full shadow-xl border border-gray-100 flex items-center justify-center text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-all opacity-0 group-hover/slider:opacity-100 hidden sm:flex"
+            aria-label="Tiếp"
+          >
+            <ChevronRight size={24} strokeWidth={2.5} />
+          </button>
         </div>
       </section>
     );

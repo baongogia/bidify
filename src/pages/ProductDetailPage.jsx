@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { getProductDetail, getProducts } from '../services/productService';
+import { getProductDetail, getProducts, reportProduct } from '../services/productService';
 import { placeBid } from '../services/bidService';
 import { toggleWatchlist } from '../services/watchlistService';
 import { AuthContext } from '../context/AuthContext';
@@ -10,6 +10,8 @@ import CountdownTimer from '../components/CountdownTimer';
 import BidHistoryModal from '../components/BidHistoryModal';
 import { Heart, User, ShieldCheck, Clock, ChevronRight, Minus, Plus, Trophy, PartyPopper, MapPin, Share2, Flag, Star, MessageCircle, ExternalLink } from 'lucide-react';
 import { useModal } from '../context/ModalContext';
+import CustomModal from '../components/Modal';
+import CurrencyInput from '../components/CurrencyInput';
 
 const formatDateTimeVi = (iso) => {
     if (!iso) return '—';
@@ -69,6 +71,9 @@ const ProductDetailPage = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
     const [showConfetti, setShowConfetti] = useState(false);
     const [relatedProducts, setRelatedProducts] = useState([]);
+    const [reportOpen, setReportOpen] = useState(false);
+    const [reportReason, setReportReason] = useState('');
+    const [reportSubmitting, setReportSubmitting] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -234,10 +239,34 @@ const ProductDetailPage = () => {
     };
 
     const handleReport = () => {
-        showAlert(
-            'Báo cáo tin đăng',
-            `Vui lòng gửi yêu cầu tới bộ phận kiểm duyệt kèm mã tin #${id} và lý do. Chúng tôi sẽ xử lý trong 24–48 giờ.`,
-        );
+        if (!isAuthenticated) {
+            navigate('/login');
+            return;
+        }
+        if (user?.id != null && product && Number(user.id) === Number(product.seller_id)) {
+            showAlert('Báo cáo', 'Bạn không thể báo cáo chính tin đăng của mình.');
+            return;
+        }
+        setReportReason('');
+        setReportOpen(true);
+    };
+
+    const submitReport = async () => {
+        const r = reportReason.trim();
+        if (!r) return;
+        setReportSubmitting(true);
+        try {
+            const res = await reportProduct(id, r);
+            if (res.success) {
+                setReportOpen(false);
+                setReportReason('');
+                showAlert('Đã gửi báo cáo', res.message || 'Admin sẽ xem xét tin này trong hàng đợi vi phạm & báo cáo.');
+            }
+        } catch (e) {
+            showAlert('Không thể báo cáo', e.message || 'Vui lòng thử lại.');
+        } finally {
+            setReportSubmitting(false);
+        }
     };
 
     if (loading) return <SkeletonDetail />;
@@ -434,13 +463,15 @@ const ProductDetailPage = () => {
                             >
                                 <Share2 size={14} /> Chia sẻ
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleReport}
-                                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-100 text-xs font-bold text-red-700 hover:bg-red-50 transition"
-                            >
-                                <Flag size={14} /> Báo cáo
-                            </button>
+                            {user?.id == null || Number(user.id) !== Number(product.seller_id) ? (
+                                <button
+                                    type="button"
+                                    onClick={handleReport}
+                                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-100 text-xs font-bold text-red-700 hover:bg-red-50 transition"
+                                >
+                                    <Flag size={14} /> Báo cáo
+                                </button>
+                            ) : null}
                         </div>
 
                         {/* Price Area */}
@@ -583,13 +614,11 @@ const ProductDetailPage = () => {
                                         >
                                             <Minus size={20} />
                                         </button>
-                                        <input 
-                                            type="number" 
-                                            min={minBid}
+                                        <CurrencyInput 
                                             value={bidAmount}
-                                            onChange={(e) => setBidAmount(e.target.value)}
-                                            className="w-full text-center px-16 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition text-xl font-bold text-gray-900 hide-arrows"
-                                            placeholder={minBid}
+                                            onChange={(val) => setBidAmount(val)}
+                                            className="w-full text-center px-16 py-3.5 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition text-xl font-bold text-gray-900"
+                                            placeholder={minBid.toLocaleString('vi-VN')}
                                         />
                                         <button 
                                             type="button"
@@ -668,6 +697,48 @@ const ProductDetailPage = () => {
                 totalBids={product.total_bids}
                 latestBid={latestBid}
             />
+
+            <CustomModal
+                open={reportOpen}
+                title="Báo cáo tin đăng"
+                onClose={() => {
+                    setReportOpen(false);
+                    setReportReason('');
+                }}
+            >
+                <div className="space-y-4 pt-2">
+                    <p className="text-sm text-gray-600">
+                        Mô tả ngắn gọn vi phạm (spam, hàng cấm, thông tin sai…). Tin sẽ vào hàng đợi &quot;Vi phạm &amp; báo cáo&quot; cho Admin.
+                    </p>
+                    <textarea
+                        value={reportReason}
+                        onChange={(e) => setReportReason(e.target.value)}
+                        rows={4}
+                        placeholder="Nội dung báo cáo..."
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setReportOpen(false);
+                                setReportReason('');
+                            }}
+                            className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-bold hover:bg-gray-200"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            type="button"
+                            disabled={!reportReason.trim() || reportSubmitting}
+                            onClick={submitReport}
+                            className="flex-1 py-2.5 rounded-xl bg-red-600 text-white text-sm font-bold hover:bg-red-700 disabled:opacity-50"
+                        >
+                            {reportSubmitting ? 'Đang gửi…' : 'Gửi báo cáo'}
+                        </button>
+                    </div>
+                </div>
+            </CustomModal>
 
             {/* Premium Celebration Overlay */}
             {showConfetti && (

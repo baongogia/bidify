@@ -29,7 +29,7 @@ const NAV_ITEMS = [
     {
         to: '/admin/moderation',
         icon: ShieldCheck,
-        label: 'Duyệt tin đăng',
+        label: 'Vi phạm & báo cáo',
     },
     {
         to: '/admin/categories',

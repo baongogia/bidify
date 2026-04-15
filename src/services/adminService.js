@@ -39,8 +39,17 @@ export const requestEditModerationProduct = async (id, reason) => {
     return await api.put(`/admin/moderation/products/${id}/request-edit`, { reason });
 };
 
-export const deleteModerationProduct = async (id) => {
-    return await api.delete(`/admin/moderation/products/${id}`);
+export const deleteModerationProduct = async (id, options = {}) => {
+    return await api.delete(`/admin/moderation/products/${id}`, {
+        data: {
+            penalize: !!options.penalize,
+            reason: options.reason || '',
+        },
+    });
+};
+
+export const dismissReviewProduct = async (id) => {
+    return await api.put(`/admin/moderation/products/${id}/dismiss-review`);
 };
 
 export const getAdminLogs = async (params = {}) => {

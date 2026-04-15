@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getCategories } from '../services/categoryService';
 import { createProduct } from '../services/productService';
 import CustomSelect from '../components/CustomSelect';
+import CurrencyInput from '../components/CurrencyInput';
 import { parseAttributeLines } from '../utils/productAttributes';
 
 const DURATION_PRESETS = [15, 60, 1440, 4320, 10080];
@@ -66,9 +67,14 @@ const CreateProductPage = () => {
             };
 
             const res = await createProduct(productData);
-            
+
             if (res.success) {
-                setSuccessMsg('Tin đăng đã được gửi và đang chờ Admin kiểm duyệt.');
+                setSuccessMsg(
+                    res.message ||
+                        (res.data?.flagged
+                            ? 'Tin đã lên sàn. Hệ thống đã đánh dấu để Admin xem lại (từ khóa hoặc ảnh).'
+                            : 'Tin đã lên sàn. Phiên đấu giá theo thời gian bạn chọn.'),
+                );
                 setTimeout(() => {
                     navigate(`/products/${res.data.id}`);
                 }, 1500);
@@ -187,14 +193,21 @@ const CreateProductPage = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Giá khởi điểm (VNĐ) <span className="text-red-500">*</span>
                         </label>
-                        <input 
-                            type="number" 
-                            {...register("starting_price", { 
+                        <Controller
+                            name="starting_price"
+                            control={control}
+                            rules={{ 
                                 required: "Giá khởi điểm là bắt buộc",
                                 min: { value: 1000, message: "Giá tối thiểu 1,000 VNĐ" }
-                            })} 
-                            placeholder="1000000"
-                            className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
+                            }}
+                            render={({ field }) => (
+                                <CurrencyInput
+                                    {...field}
+                                    placeholder="1.000.000"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition text-lg font-bold"
+                                    error={errors.starting_price}
+                                />
+                            )}
                         />
                         {errors.starting_price && <span className="text-xs text-red-500 mt-1 block">{errors.starting_price.message}</span>}
                     </div>
@@ -287,7 +300,9 @@ const CreateProductPage = () => {
                             {...register("start_time")}
                             className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Nếu để trống, sản phẩm sẽ bắt đầu đấu giá ngay sau khi được Admin phê duyệt.</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                            Để trống = mở phiên đấu giá ngay. Chọn ngày giờ = lên sàn ngay nhưng chỉ mở đặt giá đúng giờ hẹn (không cần Admin duyệt trước).
+                        </p>
                     </div>
 
                     {/* Images */}
@@ -309,15 +324,45 @@ const CreateProductPage = () => {
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1">Giá mua ngay (tuỳ chọn)</label>
-                                <input type="number" {...register('buy_now_price', { min: 0 })} placeholder="VNĐ — để trống nếu không áp dụng" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                                <Controller
+                                    name="buy_now_price"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <CurrencyInput
+                                            {...field}
+                                            placeholder="VNĐ"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm"
+                                        />
+                                    )}
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1">Bước giá tối thiểu (tuỳ chọn)</label>
-                                <input type="number" {...register('bid_increment', { min: 0 })} placeholder="Để trống = theo bảng hệ thống" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                                <Controller
+                                    name="bid_increment"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <CurrencyInput
+                                            {...field}
+                                            placeholder="Để trống = tự động"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm"
+                                        />
+                                    )}
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1">Tiền cọc tham gia (VNĐ)</label>
-                                <input type="number" {...register('deposit_required', { min: 0 })} placeholder="0 = không yêu cầu" className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm" />
+                                <Controller
+                                    name="deposit_required"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <CurrencyInput
+                                            {...field}
+                                            placeholder="0 = không cọc"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-xl text-sm"
+                                        />
+                                    )}
+                                />
                             </div>
                             <div>
                                 <label className="block text-xs font-semibold text-gray-600 mb-1">Vị trí / khu vực</label>
